@@ -52,3 +52,26 @@ function fetchMarketPrice_() {
     throw new Error('無法取得市價，且 bets 沒有任何可用的歷史市價：' + err.message);
   }
 }
+
+// ====== HTTP 進入點 ======
+
+function doGet() {
+  try {
+    const now = new Date();
+    const nowMs = now.getTime();
+    const priced = fetchMarketPrice_();
+    const dl = daysLeftFrom(nowMs);
+    return json_({
+      ok: true,
+      serverTime: nowIso_(now),
+      mkt: priced.price,
+      src: priced.src,
+      daysLeft: dl,
+      tol: tolFor(dl),
+      closed: isClosed(nowMs),
+      roster: rosterFromRows(betRows_())
+    });
+  } catch (err) {
+    return json_({ ok: false, reason: 'server_error', message: String(err) });
+  }
+}
