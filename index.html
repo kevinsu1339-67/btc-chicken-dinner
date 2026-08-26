@@ -185,7 +185,7 @@ nav button[aria-selected=true] .ic{background:var(--aqua-l)}
       <span>9/11 00:00 開盤結算 · 賭一頓飯</span>
     </h1>
     <div class="pot">
-      <div><div class="k">已下注</div><div class="v" id="pCount">0<small>/13</small></div></div>
+      <div><div class="k">已下注</div><div class="v" id="pCount">0<small>/25</small></div></div>
       <div><div class="k">餐點池</div><div class="v" id="pTotal">0.0<small> 份</small></div></div>
       <div><div class="k">吃到飯</div><div class="v" id="pWin">0<small> 人</small></div></div>
     </div>
@@ -319,6 +319,12 @@ function myName(){ return ($("name").value || '').trim(); }
 // 用正規化後的名字比對,否則「阿明」與「 阿明 」會被當成兩個人,
 // 玩家就看不到自己那一點被標成金色。
 function isMine(r){ return !!mine && normalizeName(r.name) === normalizeName(mine.name); }
+// 根據選中的名字更新 mine。若該名字已在 roster 中，mine = { name }；否則 mine = null
+function updateMine(selectedName){
+  if (!selectedName) { mine = null; return; }
+  mine = { name: selectedName };
+  if (!S.roster.some(isMine)) mine = null;
+}
 function conn(msg, bad){
   $("conn").textContent = msg;
   $("conn").style.color = bad ? 'var(--coral)' : 'var(--navy-2)';
@@ -418,8 +424,8 @@ function drawList(){
     const isMe = isMine(r);
     const d = document.createElement("div");
     d.className = "p" + (m>=1 ? "" : " lose") + (i===0 && m>=1 ? " gold" : "") + (isMe ? " me" : "");
-    const day = new Date(Date.parse(r.ts));
-    const dayLbl = (day.getMonth()+1) + '/' + String(day.getDate()).padStart(2,'0');
+    const ms = Date.parse(r.ts);
+    const dayLbl = isNaN(ms) ? '—' : (new Date(ms).getMonth()+1) + '/' + String(new Date(ms).getDate()).padStart(2,'0');
     d.innerHTML = `<div class="fill" style="width:${Math.min(100, m/Math.max(top,1)*100)}%"></div>
       <div class="rk">${i+1}</div>
       <div class="av">${esc(r.name.slice(0,1))}</div>
@@ -504,7 +510,11 @@ async function submitBet(payload){
     $("msg").textContent = '送不出去(' + err.message + ')。已幫你存起來,連上網後按一次「重送」。';
     return false;
   } finally {
-    busy = false; render();
+    busy = false;
+    // render() 在 S.mkt 為 0 時會早期返回,不執行恢復按鈕的邏輯。
+    // 必須在這裡明確還原按鈕狀態,確保即使要求失敗,遊戲未截止時按鈕也能重新啟用。
+    $("submit").disabled = S.closed;
+    render();
   }
 }
 
@@ -539,6 +549,7 @@ $("submit").onclick = () => {
 $("settle").oninput = e => { settle = +e.target.value; renderBoard(); };
 $("slider").oninput = e => { bet = +e.target.value; render(); };
 $("bet").onchange = e => { const v = +e.target.value.replace(/[^\d]/g,''); if (v) bet = v; render(); };
+$("name").onchange = () => { updateMine(myName()); render(); renderBoard(); };
 document.querySelectorAll(".nudge button").forEach(b => b.onclick = () => { bet += +b.dataset.d; render(); });
 
 /* ===== 啟動 ===== */
@@ -547,7 +558,7 @@ document.querySelectorAll(".nudge button").forEach(b => b.onclick = () => { bet 
   if (saved) { $("name").value = saved.name; $("pin").value = saved.pin; }
 
   await refresh();
-  if (saved) { mine = { name: saved.name }; if (!S.roster.some(isMine)) mine = null; }
+  if (saved) updateMine(saved.name);
   render(); renderBoard();
 
   const pending = api.loadPending();
