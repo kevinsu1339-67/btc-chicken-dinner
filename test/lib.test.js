@@ -131,3 +131,18 @@ test('hasRecentNonce 必須掃描所有列，即使列順序反向', () => {
   // n_newer 在時間窗內（30秒），應該被找到，即使最後一列極為老舊
   assert.strictEqual(lib.hasRecentNonce(reversed, 'n_newer', now), true);
 });
+
+// --- Binance 回應解析 ---
+test('parseTickerPrice 取出價格並轉成 number', () => {
+  assert.strictEqual(
+    lib.parseTickerPrice('{"symbol":"BTCUSDT","price":"78412.50000000"}'),
+    78412.5
+  );
+});
+
+test('parseTickerPrice 對壞掉的回應要丟例外而不是回 NaN', () => {
+  assert.throws(() => lib.parseTickerPrice('{"symbol":"BTCUSDT"}'));
+  assert.throws(() => lib.parseTickerPrice('{"price":"0"}'));
+  assert.throws(() => lib.parseTickerPrice('{"price":"-5"}'));
+  assert.throws(() => lib.parseTickerPrice('<html>429 Too Many Requests</html>'));
+});
