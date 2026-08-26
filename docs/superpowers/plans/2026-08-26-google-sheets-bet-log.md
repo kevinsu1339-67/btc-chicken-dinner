@@ -16,6 +16,8 @@
 - `SETTLE = 2026-09-11T00:00:00+08:00`，下注截止同一瞬間
 - 結算價定義：Coinbase Exchange BTC-USD，2026-09-11 00:00 (UTC+8) 開盤價
 - 行情來源不可改回 Binance：它對 Google 伺服器 IP 回 HTTP 451，Apps Script 用不了
+- 玩家名字是白名單（`src/lib.js` 的 `ROSTER`，25 人），不是自由輸入。
+  這是資安機制而非功能：四輪審查證明啟發式消毒擋不住 Sheets 的 USER_ENTERED 解析器
 - `ts`、`days_left`、`tol`、`mkt` 一律由伺服器產生，前端送來的同名值直接丟棄
 - `bets` 分頁 append-only，只新增不修改、不刪除
 - 網頁只顯示每人最新一筆，改注歷程只存在於 Sheet
@@ -1497,7 +1499,7 @@ git mv chicken-dinner-bankee.html index.html
 
 ```html
 <div class="act">
-  <input type="text" id="name" placeholder="你的名字" maxlength="8" aria-label="你的名字">
+  <select id="name" aria-label="你的名字" style="flex:1"></select>
   <input type="text" id="pin" placeholder="PIN" inputmode="numeric" maxlength="4"
          aria-label="4 位數 PIN" style="flex:0 0 76px;text-align:center">
   <button class="go" id="submit">下注</button>
@@ -1756,10 +1758,21 @@ async function submitBet(payload){
   }
 }
 
+// 名字下拉選單由 ROSTER 產生（來自 src/lib.js）。第一個選項是空的占位,
+// 逼玩家主動選,免得有人沒注意就用了預設的第一個人的名字下注。
+(function fillNames(){
+  const sel = $("name");
+  sel.innerHTML = '<option value="">— 選你的名字 —</option>';
+  ROSTER.forEach(n => {
+    const o = document.createElement('option');
+    o.value = n; o.textContent = n; sel.appendChild(o);
+  });
+})();
+
 $("submit").onclick = () => {
   const name = myName(), pin = ($("pin").value || '').trim();
   $("msg").style.color = 'var(--coral)';
-  if (!name) { $("msg").textContent = "填個名字再下注。"; $("name").focus(); return; }
+  if (!name) { $("msg").textContent = "先從選單選你的名字。"; $("name").focus(); return; }
   if (!/^\d{4}$/.test(pin)) { $("msg").textContent = "PIN 要 4 位數字。"; $("pin").focus(); return; }
   submitBet({ name, pin, bet });
 };

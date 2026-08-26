@@ -81,6 +81,31 @@ Google Sheet 內開三個分頁。
 粗體欄位一律由伺服器產生，前端送上來的對應值直接丟棄。這是防作弊的核心：
 「下注日」與「當下市價」不是玩家聲稱的，是伺服器蓋的章。
 
+### 4.1b 玩家名單是白名單（2026-08-26 新增）
+
+參賽者是封閉的 25 人，名單寫死在 `src/lib.js` 的 `ROSTER`：
+
+```
+David, Justin, Aaron, Daniel, Emma, Isam, Jerry, Kate Huang, Liang, Lin,
+Lydia, Mark88, nica, RM林文彬, Roger, Roman, Sean, Simon, Sophia, 大衛鱸鰻,
+安迪, 幸運好豪, 敦南RM黃煌堯, 陳小明, Kevin
+```
+
+`rosterIdOf(name)` 以 `normalizeName` 比對後回傳**名單上的正式寫法**。
+`Ｋｅｖｉｎ`／`KEVIN`／`  Kevin  ` 都解析成 `Kevin`，寫進 Sheet 的永遠是正式寫法。
+不在名單上一律拒收。
+
+**這不只是功能，它是資安機制。** 原本用啟發式規則消毒自由輸入的名字，
+連續四輪審查都找到繞過方式——因為 Google Sheets 的 `USER_ENTERED` 解析器
+是 JavaScript `Number()` 的嚴格超集，且與地區設定有關（它看得懂 `1,234`、
+`$5`、`50%`、`(7)`、`jan 5`、`12pm`）。猜這個解析器的規則是贏不了的遊戲。
+
+白名單移除了這個依賴：能寫進儲存格的值是有限且開賽前已驗證安全的。
+名單已驗證：25 個、正規化後無重複、無危險開頭字元、無純數字、
+NFKC 不改變任何一個、最長 10 字元、無 `Object.prototype` 撞名。
+
+新增玩家需要改這個陣列並重新部署——這是封閉賽局，刻意如此。
+
 ### 4.2 `players` — 身分表
 
 `player_id` / `name` / `pin_hash` / `first_ts`
