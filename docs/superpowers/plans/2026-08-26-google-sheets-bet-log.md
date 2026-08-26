@@ -726,12 +726,14 @@ bootstrap 的任務已經結束，日後若要重建 Sheet，把 `tools/bootstra
 
 - [ ] **Step 8: 在 Apps Script 編輯器手動驗證市價擷取**
 
-在編輯器上方的函式下拉選單選 `fetchMarketPrice_`，按「執行」。首次執行會跳出授權視窗，允許存取試算表與外部服務。
+在編輯器上方的函式下拉選單選 `checkPrice`，按「執行」。（`fetchMarketPrice_` 因結尾有底線而不會出現在選單裡。）首次執行會跳出授權視窗，允許存取試算表與外部服務。
 
 執行後開「執行記錄」，應無錯誤。為了看到回傳值，暫時在編輯器貼上並執行這個檢查函式：
 
 ```js
-function checkPrice_() {
+// 函式名稱結尾不可加底線。Apps Script 把底線結尾的函式視為私有,
+// 它們不會出現在編輯器的執行下拉選單裡,你會選不到而誤執行別的函式。
+function checkPrice() {
   const r = fetchMarketPrice_();
   Logger.log('price=%s src=%s', r.price, r.src);
   Logger.log('betRows 筆數=%s', betRows_().length);
@@ -747,7 +749,7 @@ betRows 筆數=3
 
 `src` 若是 `fallback`，代表 Binance 打不通——確認不是 Sheet ID 填錯，再看是否為地區封鎖。`betRows 筆數` 應為 3，即 Task 3 灌的假資料；若為 0 代表 Sheet ID 指錯了試算表。
 
-驗證完把 `checkPrice_` 從編輯器刪掉，它不進版控。
+驗證完把 `checkPrice` 從編輯器刪掉，它不進版控。
 
 - [ ] **Step 9: 提交**
 
