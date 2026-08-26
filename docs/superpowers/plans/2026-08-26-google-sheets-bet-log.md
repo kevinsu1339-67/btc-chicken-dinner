@@ -141,7 +141,7 @@ test('isClosed 在截止瞬間就成立', () => {
 - [ ] **Step 2: 跑測試確認它失敗**
 
 ```bash
-node --test test/
+node --test
 ```
 
 預期：全部 fail，錯誤訊息為 `Cannot find module '../src/lib.js'`。
@@ -201,7 +201,7 @@ if (typeof module !== 'undefined' && module.exports) {
 - [ ] **Step 4: 跑測試確認通過**
 
 ```bash
-node --test test/
+node --test
 ```
 
 預期：`# pass 10` / `# fail 0`。
@@ -312,7 +312,7 @@ test('hasRecentNonce 在時間窗內認得重複，窗外不認', () => {
 - [ ] **Step 2: 跑測試確認它失敗**
 
 ```bash
-node --test test/
+node --test
 ```
 
 預期：新增的 6 題 fail，訊息為 `lib.rosterFromRows is not a function` 等。Task 1 的 10 題仍應 pass。
@@ -395,7 +395,7 @@ if (typeof module !== 'undefined' && module.exports) {
 - [ ] **Step 4: 跑測試確認通過**
 
 ```bash
-node --test test/
+node --test
 ```
 
 預期：`# pass 16` / `# fail 0`。
@@ -574,7 +574,7 @@ test('parseTickerPrice 對壞掉的回應要丟例外而不是回 NaN', () => {
 - [ ] **Step 2: 跑測試確認它失敗**
 
 ```bash
-node --test test/
+node --test
 ```
 
 預期：新增的 2 題 fail，訊息為 `lib.parseTickerPrice is not a function`。
@@ -610,7 +610,7 @@ if (typeof module !== 'undefined' && module.exports) {
 - [ ] **Step 4: 跑測試確認通過**
 
 ```bash
-node --test test/
+node --test
 ```
 
 預期：`# pass 18` / `# fail 0`。
@@ -855,7 +855,7 @@ curl -sL "<貼上你的 Web App 網址>" | python3 -m json.tool
 ## 開發
 
 ```bash
-node --test test/          # 跑測試，零依賴
+node --test                # 跑測試，零依賴
 ./tools/build-gas.sh       # 產生要貼進 Apps Script 的單一檔案
 ```
 
@@ -1303,7 +1303,7 @@ test('storage 整個壞掉時不可讓下注流程炸掉', async () => {
 - [ ] **Step 2: 跑測試確認它失敗**
 
 ```bash
-node --test test/
+node --test
 ```
 
 預期：`test/api.test.js` 全部 fail，訊息為 `Cannot find module '../src/api.js'`。`test/lib.test.js` 的 18 題仍應 pass。
@@ -1395,7 +1395,7 @@ node --test test/
 - [ ] **Step 4: 跑測試確認通過**
 
 ```bash
-node --test test/
+node --test
 ```
 
 預期：`# pass 28` / `# fail 0`。
@@ -1939,7 +1939,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - [ ] **Step 1: 跑完整測試**
 
 ```bash
-node --test test/
+node --test
 ```
 
 預期：`# pass 28` / `# fail 0`。任何一題 fail 都不得進入下一步。
@@ -2030,6 +2030,10 @@ node --test test/
 
 邏輯集中在 `src/lib.js`、`Code.gs` 只留 I/O，是為了讓計分能用
 `node --test` 測到——Apps Script 本身難以自動化測試。
+
+`node --test` 不加參數即可，Node 會自行掃出 `test/**/*.test.js`。
+不要寫成 `node --test test/`：Node 26 會把 `test` 當成模組去載入而報
+`Cannot find module`。
 ```
 
 ```bash
