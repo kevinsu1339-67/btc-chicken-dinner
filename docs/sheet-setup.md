@@ -38,3 +38,19 @@ Sheet ID: `1j3ZR5aMRWtVA2ILoydljTk1UjQ61qCn7KDPSqlOjha0`
 實務上沒有風險：試算表本身不對外分享，所有讀寫都由 Apps Script
 以擁有者身分進行，光有 ID 進不去。但別把試算表的共用權限改成
 「知道連結的任何人」，那才會真的出事。
+
+## Web App 部署網址
+
+```
+https://script.google.com/macros/s/AKfycbwxroczGE4hLMYfkxjjPsmbETVXD-iHIABR_WTe_zn9TMfsAHVfLfvmhNqeG9dBy1Jm/exec
+```
+
+部署設定：執行身分 = 我、誰可以存取 = 所有人。
+2026-08-26 首次部署驗證通過（doGet 回 ok:true、daysLeft 16、tol 24、roster 兩筆且無 nonce）。
+
+**改完 `Code.gs` 必須「管理部署作業 → 編輯 → 版本選新版本 → 部署」**，
+只按儲存不會生效，網址跑的仍是舊版程式碼。網址本身不會變。
+
+這個網址等同於資料庫的門。有它的人可以讀到全場下注（`doGet` 公開），
+也可以嘗試寫入，但寫入受 PIN 保護。repo 若設為 public 這個網址就會公開，
+Task 10 部署前要重新評估。
