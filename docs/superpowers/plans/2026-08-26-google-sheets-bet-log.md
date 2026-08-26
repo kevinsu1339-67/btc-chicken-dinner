@@ -709,7 +709,20 @@ function fetchMarketPrice_() {
 ./tools/build-gas.sh
 ```
 
-在 Google Sheet 中選「擴充功能 → Apps Script」開啟繫結的專案。把 `build/gas-bundle.gs` 全部內容貼進 `Code.gs`，並把第一行的 `PUT_YOUR_SHEET_ID_HERE` 換成實際 Sheet ID。存檔。
+在 Google Sheet 中選「擴充功能 → Apps Script」開啟繫結的專案。
+
+此時 `Code.gs` 裡是 Task 3 的 bootstrap 腳本。**全選並刪掉，再貼上 `build/gas-bundle.gs`
+的全部內容。**
+
+⚠️ **絕對不要保留 bootstrap 當成第二個檔案。** Apps Script 專案裡所有 `.gs` 檔共用
+同一個全域作用域，而 `tools/bootstrap-sheet.gs` 與 `src/lib.js` 都宣告了
+`const SETTLE_MS`。兩個檔案並存會造成重複宣告，整個專案立刻壞掉，
+而且錯誤訊息不會指向真正的原因。
+
+bootstrap 的任務已經結束，日後若要重建 Sheet，把 `tools/bootstrap-sheet.gs`
+重新貼回來執行一次，跑完再換回 bundle 即可。
+
+`SHEET_ID` 已經填好實際值，不需要再修改。存檔。
 
 - [ ] **Step 8: 在 Apps Script 編輯器手動驗證市價擷取**
 
