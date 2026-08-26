@@ -46,7 +46,7 @@ function rowToBet(row) {
   return o;
 }
 
-// 每人只留 seq 最大的那筆。不依賴列順序，因為 Sheet 有可能被手動排序過。
+// 每人只留 seq 最大的那筆。Seq 值由 doPost 寫入鎖保證唯一，故無需處理相同 seq 的情況。
 function rosterFromRows(rows) {
   const byPlayer = {};
   for (let i = 0; i < rows.length; i++) {
@@ -80,15 +80,15 @@ function nextSeq(rows, playerId) {
 }
 
 // 冪等檢查：雙擊或網路重試會用同一個 nonce 送兩次，只能寫一列。
-// 由尾端往回掃，一旦看到超出時間窗的列就停，不必掃完整張表。
+// 全掃所有列而非提前中止，因列順序無法保證與時間順序相同；Sheet 小（25人×若干筆），成本低。
 function hasRecentNonce(rows, nonce, nowMs, windowMs) {
   const w = (windowMs === undefined) ? 60000 : windowMs;
   for (let i = rows.length - 1; i >= 0; i--) {
     const r = rows[i];
     if (!r) continue;
     const t = Date.parse(r[0]);
-    if (!isNaN(t) && nowMs - t > w) break;
-    if (r[10] === nonce) return true;
+    // 若時間無法解析則保守視為窗內；否則檢查是否在時間窗內
+    if ((isNaN(t) || nowMs - t <= w) && r[10] === nonce) return true;
   }
   return false;
 }

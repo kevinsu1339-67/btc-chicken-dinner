@@ -120,3 +120,14 @@ test('hasRecentNonce 在時間窗內認得重複，窗外不認', () => {
   const later = Date.parse('2026-09-02T21:49:05+08:00'); // 距最後一列 120 秒
   assert.strictEqual(lib.hasRecentNonce(SAMPLE, 'n3', later), false);
 });
+
+test('hasRecentNonce 必須掃描所有列，即使列順序反向', () => {
+  const now = Date.parse('2026-09-02T21:47:35+08:00');
+  // 反向時間排序：最新的列在前，最舊的列在後
+  const reversed = [
+    row('2026-09-02T21:47:05+08:00', '玩1', '玩1', 1, 9, 18, 79615, 82000, 2.99, 'n_newer'),
+    row('2026-08-26T10:00:00+08:00', '玩2', '玩2', 1, 15, 23, 79200, 78000, 1.52, 'n_old'),
+  ];
+  // n_newer 在時間窗內（30秒），應該被找到，即使最後一列極為老舊
+  assert.strictEqual(lib.hasRecentNonce(reversed, 'n_newer', now), true);
+});
