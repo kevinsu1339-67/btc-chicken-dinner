@@ -78,7 +78,7 @@ function authenticate_(playerId, name, pin, now) {
     // 會讓 Sheets 變型別的 playerId。這裡只是防 getValues() 讀回數字或布林
     // 時，=== 比對整組失效——正是原本認證繞過漏洞成立的地方。
     if (String(rows[i][0]) === playerId) {
-      if (rows[i][2] === h) return { ok: true };
+      if (String(rows[i][2]) === h) return { ok: true };
       // 公開端點＋4 位數 PIN，暴力猜對就是攻擊本身（猜中即可冒名下注）。
       // 擁有者選擇「可見度優先於封鎖」：只記錄，不做計數／快取／鎖定，
       // 因此一次暴力掃描會在執行記錄留下數千筆，這是刻意的取捨。

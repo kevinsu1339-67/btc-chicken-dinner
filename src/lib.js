@@ -10,6 +10,35 @@ function normalizeName(name) {
   return String(name).normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
+// 這是封閉賽局唯一的 25 人名單，由主辦人核對過（正規化後彼此不衝突、
+// 沒有危險的開頭字元、沒有純數字、NFKC 不會改變它、都在 20 字以內、
+// 也不會撞到 Object.prototype 的既有鍵）。安全性完全來自「在不在這份
+// 名單裡」，不是靠事後偵測輸入長什麼樣子——凡是 ROSTER 裡的字串，
+// 寫進 Sheet 儲存格一定安全，因為每一筆都已經檢查過。
+// 要新增或修改玩家，直接編輯這個陣列並重新部署，沒有其他地方要改。
+const ROSTER = [
+  'David', 'Justin', 'Aaron', 'Daniel', 'Emma', 'Isam', 'Jerry', 'Kate Huang',
+  'Liang', 'Lin', 'Lydia', 'Mark88', 'nica', 'RM林文彬', 'Roger', 'Roman',
+  'Sean', 'Simon', 'Sophia', '大衛鱸鰻', '安迪', '幸運好豪', '敦南RM黃煌堯',
+  '陳小明', 'Kevin'
+];
+
+// 查找表在模組載入時建一次，而非每次呼叫 rosterIdOf 都重新正規化整份名單。
+// 用 Object.create(null) 而非 {}：即使名單或輸入湊巧撞到 constructor 之類
+// 的字，也不會誤取到繼承自 Object.prototype 的值。
+const ROSTER_BY_NORMALIZED = Object.create(null);
+for (let i = 0; i < ROSTER.length; i++) {
+  ROSTER_BY_NORMALIZED[normalizeName(ROSTER[i])] = ROSTER[i];
+}
+
+// 把任意輸入正規化後拿去比對名單，命中則回傳「名單裡原本的字串」
+// （不是呼叫端送來的版本），未命中回傳 null。這保證最終寫進 Sheet
+// 儲存格的一定是 ROSTER 裡驗證過的那個確切字串。
+function rosterIdOf(name) {
+  const key = normalizeName(name);
+  return (key in ROSTER_BY_NORMALIZED) ? ROSTER_BY_NORMALIZED[key] : null;
+}
+
 // 剩餘天數，下限 1。用 ceil 而非 floor：9/09 23:59 下注仍算 2 天，
 // 一過午夜掉到 1 天，容許值從 8 掉到 6。
 function daysLeftFrom(tsMs, settleMs) {
@@ -48,7 +77,9 @@ function rowToBet(row) {
 
 // 每人只留 seq 最大的那筆。Seq 值由 doPost 寫入鎖保證唯一，故無需處理相同 seq 的情況。
 function rosterFromRows(rows) {
-  const byPlayer = {};
+  // Object.create(null)：純函式不該依賴呼叫端保證 player_id 不是
+  // __proto__ 或 constructor 之類的鍵，否則 byPlayer[k] 會取到繼承值。
+  const byPlayer = Object.create(null);
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
     if (!r || r[1] === '' || r[1] == null) continue;
@@ -111,11 +142,13 @@ function parseTickerPrice(text) {
 // appendRow 是「使用者輸入」語意的寫入：儲存格裡打「123」會被存成數字 123，
 // 打「true」會變成布林 TRUE，打「1/2」或「2026-09-11」會被解析成日期，
 // 開頭打「'」則是 Sheets 的強制文字標記，字元本身會被吃掉。
-// 這些情況下，寫入前算好的字串就再也無法用 === 比對回讀出來的儲存格值——
-// authenticate_／nextSeq／hasRecentNonce 全部靠這個 === 成立，一旦不成立，
-// authenticate_ 會把「找不到既有玩家」誤判為「這是新玩家」，變成任何 PIN 都能通過。
-// 因此任何要寫進儲存格、之後還要拿來做身分或冪等比對的字串（playerId、nonce），
-// 都必須先過這一關，寫入前就把「回讀後型別會變」的字串擋下來。
+// 這些情況下，寫入前算好的字串就再也無法用 === 比對回讀出來的儲存格值。
+//
+// name／playerId 已經不再需要這一關：兩者現在只能是 ROSTER 裡驗證過的
+// 25 個固定字串之一（見 rosterIdOf），值的集合有限且已在撰寫時逐一驗證
+// 過不會被 Sheets 轉型，不必再靠這個函式事後猜。這個函式現在只剩下
+// 一個呼叫者——nonce 是客戶端自產生的任意字串，不在白名單內，仍然需要
+// 這一關才能保證 hasRecentNonce 的 === 比對成立。
 function breaksSheetRoundTrip(s) {
   if (s.charAt(0) === "'") return true; // 強制文字標記，字元會被吃掉
   if (s.trim() !== '' && isFinite(Number(s))) return true; // 數字外觀，如 123／0012／1e5
@@ -125,70 +158,29 @@ function breaksSheetRoundTrip(s) {
   return false;
 }
 
-// 表單驗證與清理。doPost 的第一道防線，尤其是 name／nonce：
-// 兩者都會原封不動寫進 Sheet 儲存格，若允許以 =／+／-／@ 開頭，
-// Google Sheets 會把它當公式求值（例如讀出 players!C 欄的 pin_hash 明碼雜湊），
-// 而 doGet 又會把算出來的值當作 roster 公開回傳，等於把每個人的 PIN 雜湊送給任何人離線破解。
+// 表單驗證與清理。doPost 的第一道防線。
+// name 的安全性不再靠事後偵測輸入格式，而是靠白名單：這是 25 人的封閉
+// 賽局，合法玩家的集合有限且已知，membership in ROSTER 直接取代了公式
+// 開頭字元／控制字元／長度／往返型別等一整組啟發式檢查——凡是 ROSTER
+// 裡的字串，撰寫時已經驗證過安全，不需要再猜 Google Sheets 的剖析器
+// 會怎麼處理它。
+// rosterIdOf 回傳的是 ROSTER 裡「原本的」字串，不是呼叫端送來的版本，
+// 所以最終寫進 bets!C 與 players!B 的一定是驗證過的那個確切值；
+// 真正寫進 bets!B 與 players!A 的 player_id，則是對這個標準化後的名字
+// 套用 normalizeName 算出來的，同樣不是呼叫端能左右的值。
 // 依序檢查，回傳第一個失敗的原因；全部通過才回傳清理過（trim／型別轉換）後的值。
-//
-// 真正寫進 bets!B 與 players!A 的不是 name，是 normalizeName(name) 算出來的
-// player_id。normalizeName 會做 NFKC 正規化，把全形／相容變體字元轉成 ASCII，
-// 例如全形等號 ＝（U+FF1D）或小型等號 ﹦（U+FE66）都會變成半形 =。
-// 只驗證 name 擋不住這種字元：name 本身通過所有檢查，NFKC 之後才變成公式開頭。
-// 因此 playerId 必須在這裡（唯一算出 player_id 的地方）算出來並套用同一組檢查，
-// 讓 doPost 沒有機會拿到一個沒被驗證過的 player_id。
 function validateSubmission(body) {
   const b = (body && typeof body === 'object') ? body : {};
 
-  const name = String(b.name == null ? '' : b.name).trim();
-  if (!name) {
-    return { ok: false, reason: 'bad_name', message: '請填名字。' };
-  }
-  // 先檢查開頭字元與控制字元，長度檢查放最後：
-  // 這樣一個過長的注入字串會回報「公式開頭」而不是「太長」，
-  // 擁有者從執行記錄的錯誤原因就能看出攻擊者實際在嘗試什麼。
-  if (/^[=+\-@]/.test(name)) {
-    return { ok: false, reason: 'bad_name', message: '名字不能以 =、+、-、@ 開頭。' };
-  }
-  // \x00-\x1F 涵蓋 tab／換行等控制字元，\x7F 是 DEL。
-  if (/[\x00-\x1F\x7F]/.test(name)) {
-    return { ok: false, reason: 'bad_name', message: '名字不能包含換行或控制字元。' };
-  }
-  if (name.length > 20) {
-    return { ok: false, reason: 'bad_name', message: '名字太長了，請控制在 20 個字以內。' };
-  }
-
-  // player_id 是實際寫進 bets!B、players!A 的值，必須套用同一組開頭字元／
-  // 控制字元檢查——這才是漏洞真正需要被擋住的地方。
-  // 長度也要重新檢查：NFKC 不是只會讓字元變短或不變，它可以展開。
-  // 例如相容字元 ⩶（U+2A76，TRIPLE TILDE EQUAL）NFKC 正規化後會變成三個字元
-  // "==="；'a' + '⩶'.repeat(19) 是 20 個原始字元（剛好卡在上面的 name 長度上限
-  // 之內），NFKC 之後卻是 58 字元的 playerId。上面的 20 字限制擋不住這種放大，
-  // 必須在這裡對 playerId 本身再檢查一次長度。
-  const playerId = normalizeName(name);
-  if (!playerId) {
-    return { ok: false, reason: 'bad_name', message: '這個名字正規化後是空的，換一個名字。' };
-  }
-  if (/^[=+\-@]/.test(playerId)) {
-    return { ok: false, reason: 'bad_name', message: '這個名字正規化後會變成公式開頭，換一個名字。' };
-  }
-  if (/[\x00-\x1F\x7F]/.test(playerId)) {
-    return { ok: false, reason: 'bad_name', message: '這個名字正規化後含有控制字元，換一個名字。' };
-  }
-  if (playerId.length > 20) {
-    return { ok: false, reason: 'bad_name', message: '這個名字正規化後太長了，換一個名字。' };
-  }
-  // 認證繞過／冒名的根本防線：playerId 必須能原樣往返 Sheet 儲存格。
-  // appendRow 寫入時若被 Sheets 當成數字／布林／日期／強制文字，
-  // getValues() 讀回來的型別就不再等於這裡算出的字串，authenticate_ 的
-  // === 比對永遠不成立，會把「已註冊玩家」誤判成「新玩家」而略過 PIN 檢查。
-  if (breaksSheetRoundTrip(playerId)) {
+  const name = rosterIdOf(b.name == null ? '' : b.name);
+  if (name === null) {
     return {
       ok: false,
       reason: 'bad_name',
-      message: '這個名字太像純數字或符號了，Google Sheets 會把它存成別的型別。請至少加一個英文字母或中文字。'
+      message: '這個名字不在名單上，請聯絡主辦人確認你的名字。'
     };
   }
+  const playerId = normalizeName(name);
 
   const pin = String(b.pin == null ? '' : b.pin).trim();
   if (!/^\d{4}$/.test(pin)) {
@@ -226,8 +218,8 @@ function validateSubmission(body) {
 // 檔尾匯出。Apps Script 沒有 module，typeof 檢查讓這段在 GAS 被安靜略過。
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    SETTLE_MS, MS_PER_DAY, BET_COLS,
-    normalizeName, daysLeftFrom, tolFor, gutsOf, multOf, isClosed,
+    SETTLE_MS, MS_PER_DAY, BET_COLS, ROSTER,
+    normalizeName, rosterIdOf, daysLeftFrom, tolFor, gutsOf, multOf, isClosed,
     rowToBet, rosterFromRows, nextSeq, hasRecentNonce,
     parseTickerPrice, validateSubmission
   };

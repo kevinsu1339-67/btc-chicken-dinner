@@ -23,9 +23,9 @@ const LAST_ROW = 55;         // 公式填到第 55 列，可容納 50 人
 // 驗證用假資料。只給「事實」欄位，guts / days_left / tol 一律由公式算出來,
 // 避免手寫的衍生值與事實欄位對不起來。
 const SAMPLE = [
-  { ts: '2026-08-26T14:03:11+08:00', player: '阿明', seq: 1, mkt: 78412, bet: 85000, nonce: 'n1' },
-  { ts: '2026-08-27T10:00:00+08:00', player: '小美', seq: 1, mkt: 79200, bet: 78000, nonce: 'n2' },
-  { ts: '2026-09-02T21:47:05+08:00', player: '阿明', seq: 2, mkt: 79615, bet: 82000, nonce: 'n3' }
+  { ts: '2026-08-26T14:03:11+08:00', player: 'Kevin', seq: 1, mkt: 78412, bet: 85000, nonce: 'n1' },
+  { ts: '2026-08-27T10:00:00+08:00', player: 'Emma', seq: 1, mkt: 79200, bet: 78000, nonce: 'n2' },
+  { ts: '2026-09-02T21:47:05+08:00', player: 'Kevin', seq: 2, mkt: 79615, bet: 82000, nonce: 'n3' }
 ];
 
 // 與 src/lib.js 完全相同的三條公式。這裡重複一份是刻意的：
@@ -155,7 +155,7 @@ function verify_(sh) {
   rows.forEach((r) => { if (r[0]) got[r[0]] = r; });
 
   const names = Object.keys(got);
-  out.push('current 分頁玩家數：' + names.length + '（預期 2：阿明、小美）');
+  out.push('current 分頁玩家數：' + names.length + '（預期 2：Kevin、Emma）');
 
   const latest = {};
   SAMPLE.forEach((s) => {
