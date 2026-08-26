@@ -107,6 +107,13 @@ function parseTickerPrice(text) {
 // Google Sheets 會把它當公式求值（例如讀出 players!C 欄的 pin_hash 明碼雜湊），
 // 而 doGet 又會把算出來的值當作 roster 公開回傳，等於把每個人的 PIN 雜湊送給任何人離線破解。
 // 依序檢查，回傳第一個失敗的原因；全部通過才回傳清理過（trim／型別轉換）後的值。
+//
+// 真正寫進 bets!B 與 players!A 的不是 name，是 normalizeName(name) 算出來的
+// player_id。normalizeName 會做 NFKC 正規化，把全形／相容變體字元轉成 ASCII，
+// 例如全形等號 ＝（U+FF1D）或小型等號 ﹦（U+FE66）都會變成半形 =。
+// 只驗證 name 擋不住這種字元：name 本身通過所有檢查，NFKC 之後才變成公式開頭。
+// 因此 playerId 必須在這裡（唯一算出 player_id 的地方）算出來並套用同一組檢查，
+// 讓 doPost 沒有機會拿到一個沒被驗證過的 player_id。
 function validateSubmission(body) {
   const b = (body && typeof body === 'object') ? body : {};
 
@@ -114,15 +121,32 @@ function validateSubmission(body) {
   if (!name) {
     return { ok: false, reason: 'bad_name', message: '請填名字。' };
   }
-  if (name.length > 20) {
-    return { ok: false, reason: 'bad_name', message: '名字太長了，請控制在 20 個字以內。' };
-  }
+  // 先檢查開頭字元與控制字元，長度檢查放最後：
+  // 這樣一個過長的注入字串會回報「公式開頭」而不是「太長」，
+  // 擁有者從執行記錄的錯誤原因就能看出攻擊者實際在嘗試什麼。
   if (/^[=+\-@]/.test(name)) {
     return { ok: false, reason: 'bad_name', message: '名字不能以 =、+、-、@ 開頭。' };
   }
   // \x00-\x1F 涵蓋 tab／換行等控制字元，\x7F 是 DEL。
   if (/[\x00-\x1F\x7F]/.test(name)) {
     return { ok: false, reason: 'bad_name', message: '名字不能包含換行或控制字元。' };
+  }
+  if (name.length > 20) {
+    return { ok: false, reason: 'bad_name', message: '名字太長了，請控制在 20 個字以內。' };
+  }
+
+  // player_id 是實際寫進 bets!B、players!A 的值，必須套用同一組開頭字元／
+  // 控制字元檢查——這才是漏洞真正需要被擋住的地方。不檢查長度：
+  // NFKC 只會讓字元變短或不變，不會讓通過上面 20 字限制的 name 變長。
+  const playerId = normalizeName(name);
+  if (!playerId) {
+    return { ok: false, reason: 'bad_name', message: '這個名字正規化後是空的，換一個名字。' };
+  }
+  if (/^[=+\-@]/.test(playerId)) {
+    return { ok: false, reason: 'bad_name', message: '這個名字正規化後會變成公式開頭，換一個名字。' };
+  }
+  if (/[\x00-\x1F\x7F]/.test(playerId)) {
+    return { ok: false, reason: 'bad_name', message: '這個名字正規化後含有控制字元，換一個名字。' };
   }
 
   const pin = String(b.pin == null ? '' : b.pin).trim();
@@ -143,7 +167,7 @@ function validateSubmission(body) {
     return { ok: false, reason: 'bad_nonce', message: 'nonce 格式不正確。' };
   }
 
-  return { ok: true, name, pin, bet, nonce };
+  return { ok: true, name, playerId, pin, bet, nonce };
 }
 
 // 檔尾匯出。Apps Script 沒有 module，typeof 檢查讓這段在 GAS 被安靜略過。

