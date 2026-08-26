@@ -74,7 +74,10 @@ function authenticate_(playerId, name, pin, now) {
   const h = pinHash_(playerId, pin);
 
   for (let i = 0; i < rows.length; i++) {
-    if (rows[i][0] === playerId) {
+    // String() 是補強而非主防線：主防線是 validateSubmission（lib.js）擋掉
+    // 會讓 Sheets 變型別的 playerId。這裡只是防 getValues() 讀回數字或布林
+    // 時，=== 比對整組失效——正是原本認證繞過漏洞成立的地方。
+    if (String(rows[i][0]) === playerId) {
       if (rows[i][2] === h) return { ok: true };
       // 公開端點＋4 位數 PIN，暴力猜對就是攻擊本身（猜中即可冒名下注）。
       // 擁有者選擇「可見度優先於封鎖」：只記錄，不做計數／快取／鎖定，
@@ -165,6 +168,12 @@ function doPost(e) {
       priced.price, bet, guts, priced.src, nonce
     ]);
 
+    // flush 放在 try 裡、回傳成功之前：若 appendRow 其實沒真正落地，
+    // flush 丟例外會直接落進下面的 catch，回傳 server_error，
+    // 而不是先組好 ok:true 的回應、之後才在 finally 裡默默吞掉例外。
+    // 重試由前端用同一個 nonce 送出，hasRecentNonce 會吸收掉重複寫入。
+    SpreadsheetApp.flush();
+
     return json_({
       ok: true, seq: seq, tol: tol, daysLeft: dl,
       mkt: priced.price, guts: guts,
@@ -174,13 +183,9 @@ function doPost(e) {
     console.error('doPost 拋出例外', err);
     return json_({ ok: false, reason: 'server_error', message: '伺服器暫時無法使用，請稍後再試' });
   } finally {
-    // appendRow 對 Sheets 而言是緩衝寫入，不保證在這裡已真正落地。
-    // 若不 flush 就先放鎖，下一個請求可能搶到鎖後讀到還沒寫入的 bets 範圍，
-    // 用同一個 seq 算出重複值——lib.js 的 rosterFromRows 對 seq 沒有平手規則，
-    // 會直接吃掉其中一筆，注就這樣不見了。
-    // 但放鎖比 flush 成功更重要：flush 若丟例外，沒接住的話 releaseLock
-    // 就永遠不會執行，鎖會卡住直到逾時，擋住之後所有人的下注。
-    try { SpreadsheetApp.flush(); } catch (e) { console.error('flush 失敗', e); }
+    // flush 已經移進上面的 try（appendRow 之後、組回應之前）。
+    // 這裡只放鎖：不管成功／失敗／例外，鎖都一定要放，否則會卡住
+    // 之後所有人的下注直到逾時。
     lock.releaseLock();
   }
 }

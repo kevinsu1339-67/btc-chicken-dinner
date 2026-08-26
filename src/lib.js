@@ -74,7 +74,10 @@ function nextSeq(rows, playerId) {
   let max = 0;
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
-    if (r && r[1] === playerId) max = Math.max(max, Number(r[3]) || 0);
+    // 補強而非主防線：主防線是 validateSubmission 擋掉會讓 Sheets 變型別的
+    // playerId。這裡用 String() 是為了 belt-and-braces——getValues() 讀回來的
+    // 儲存格可能是數字或布林，不該讓型別不同直接讓比對整組失效。
+    if (r && String(r[1]) === playerId) max = Math.max(max, Number(r[3]) || 0);
   }
   return max + 1;
 }
@@ -87,8 +90,10 @@ function hasRecentNonce(rows, nonce, nowMs, windowMs) {
     const r = rows[i];
     if (!r) continue;
     const t = Date.parse(r[0]);
-    // 若時間無法解析則保守視為窗內；否則檢查是否在時間窗內
-    if ((isNaN(t) || nowMs - t <= w) && r[10] === nonce) return true;
+    // 若時間無法解析則保守視為窗內；否則檢查是否在時間窗內。
+    // r[10] 用 String() 是補強而非主防線：主防線是 validateSubmission 擋掉
+    // 會讓 Sheets 變型別的 nonce，這裡只是防 getValues() 讀回數字時整組失效。
+    if ((isNaN(t) || nowMs - t <= w) && String(r[10]) === nonce) return true;
   }
   return false;
 }
@@ -100,6 +105,24 @@ function parseTickerPrice(text) {
   const p = Number(o.price);
   if (!isFinite(p) || p <= 0) throw new Error('Ticker 回應沒有可用的價格：' + text.slice(0, 120));
   return p;
+}
+
+// 判斷字串經 appendRow 寫入 Sheet 儲存格後，getValues() 讀回來會不會變型別。
+// appendRow 是「使用者輸入」語意的寫入：儲存格裡打「123」會被存成數字 123，
+// 打「true」會變成布林 TRUE，打「1/2」或「2026-09-11」會被解析成日期，
+// 開頭打「'」則是 Sheets 的強制文字標記，字元本身會被吃掉。
+// 這些情況下，寫入前算好的字串就再也無法用 === 比對回讀出來的儲存格值——
+// authenticate_／nextSeq／hasRecentNonce 全部靠這個 === 成立，一旦不成立，
+// authenticate_ 會把「找不到既有玩家」誤判為「這是新玩家」，變成任何 PIN 都能通過。
+// 因此任何要寫進儲存格、之後還要拿來做身分或冪等比對的字串（playerId、nonce），
+// 都必須先過這一關，寫入前就把「回讀後型別會變」的字串擋下來。
+function breaksSheetRoundTrip(s) {
+  if (s.charAt(0) === "'") return true; // 強制文字標記，字元會被吃掉
+  if (s.trim() !== '' && isFinite(Number(s))) return true; // 數字外觀，如 123／0012／1e5
+  if (/^(true|false)$/i.test(s)) return true; // 布林外觀
+  if (/[/\\]/.test(s)) return true; // 斜線，Sheets 常解析成日期
+  if (/^\d+([-.:]\d+)+$/.test(s)) return true; // 數字加 - . : 分隔，日期或時間外觀
+  return false;
 }
 
 // 表單驗證與清理。doPost 的第一道防線，尤其是 name／nonce：
@@ -136,8 +159,12 @@ function validateSubmission(body) {
   }
 
   // player_id 是實際寫進 bets!B、players!A 的值，必須套用同一組開頭字元／
-  // 控制字元檢查——這才是漏洞真正需要被擋住的地方。不檢查長度：
-  // NFKC 只會讓字元變短或不變，不會讓通過上面 20 字限制的 name 變長。
+  // 控制字元檢查——這才是漏洞真正需要被擋住的地方。
+  // 長度也要重新檢查：NFKC 不是只會讓字元變短或不變，它可以展開。
+  // 例如相容字元 ⩶（U+2A76，TRIPLE TILDE EQUAL）NFKC 正規化後會變成三個字元
+  // "==="；'a' + '⩶'.repeat(19) 是 20 個原始字元（剛好卡在上面的 name 長度上限
+  // 之內），NFKC 之後卻是 58 字元的 playerId。上面的 20 字限制擋不住這種放大，
+  // 必須在這裡對 playerId 本身再檢查一次長度。
   const playerId = normalizeName(name);
   if (!playerId) {
     return { ok: false, reason: 'bad_name', message: '這個名字正規化後是空的，換一個名字。' };
@@ -147,6 +174,20 @@ function validateSubmission(body) {
   }
   if (/[\x00-\x1F\x7F]/.test(playerId)) {
     return { ok: false, reason: 'bad_name', message: '這個名字正規化後含有控制字元，換一個名字。' };
+  }
+  if (playerId.length > 20) {
+    return { ok: false, reason: 'bad_name', message: '這個名字正規化後太長了，換一個名字。' };
+  }
+  // 認證繞過／冒名的根本防線：playerId 必須能原樣往返 Sheet 儲存格。
+  // appendRow 寫入時若被 Sheets 當成數字／布林／日期／強制文字，
+  // getValues() 讀回來的型別就不再等於這裡算出的字串，authenticate_ 的
+  // === 比對永遠不成立，會把「已註冊玩家」誤判成「新玩家」而略過 PIN 檢查。
+  if (breaksSheetRoundTrip(playerId)) {
+    return {
+      ok: false,
+      reason: 'bad_name',
+      message: '這個名字太像純數字或符號了，Google Sheets 會把它存成別的型別。請至少加一個英文字母或中文字。'
+    };
   }
 
   const pin = String(b.pin == null ? '' : b.pin).trim();
@@ -163,7 +204,19 @@ function validateSubmission(body) {
   if (!nonce) {
     return { ok: false, reason: 'bad_nonce', message: '缺少 nonce。' };
   }
+  // nonce 也會原封不動寫進 bets!K，同樣要擋公式開頭字元。原本的字元集正規表達式
+  // 只擋非法字元，不管位置，所以「-A2」「-1-1」「--x」這種開頭是 - 的合法字元
+  // 組合會通過，寫進儲存格卻被 Sheets 當成公式。
+  if (/^[=+\-@]/.test(nonce)) {
+    return { ok: false, reason: 'bad_nonce', message: 'nonce 不能以 =、+、-、@ 開頭。' };
+  }
   if (nonce.length > 64 || !/^[A-Za-z0-9_-]+$/.test(nonce)) {
+    return { ok: false, reason: 'bad_nonce', message: 'nonce 格式不正確。' };
+  }
+  // nonce 同樣要能原樣往返 Sheet 儲存格：hasRecentNonce 也是靠 === 比對，
+  // 純數字的 nonce（例如「12345」）寫進去會變成數字，讀回來就不再等於
+  // 原本的字串，冪等檢查因此失效，雙擊或網路重試會被當成兩筆不同的下注。
+  if (breaksSheetRoundTrip(nonce)) {
     return { ok: false, reason: 'bad_nonce', message: 'nonce 格式不正確。' };
   }
 

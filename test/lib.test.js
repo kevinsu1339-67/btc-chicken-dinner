@@ -272,6 +272,66 @@ test('validateSubmission 超過 20 字的注入字串仍回報 bad_name（確認
   assert.strictEqual(r.reason, 'bad_name');
 });
 
+// --- 認證繞過／冒名：playerId 必須能在 Sheet 儲存格原樣往返 ---
+// appendRow 是「使用者輸入」語意的寫入，getValues() 讀回的是型別轉換後的值。
+// 若 playerId 是數字看起來的字串、true/false、日期或前導單引號，
+// 寫進 players!A 後讀回來就不再 === 原本算出的 playerId，
+// authenticate_ 的比對永遠不成立 -> 落入「首次註冊」分支 -> 任何 PIN 都會被接受。
+// 這批測試對應報告裡驗證過「目前全部通過」的那張表，逐一改成應被拒絕。
+test('validateSubmission 拒絕會在 Sheet 儲存格變型別的 playerId（認證繞過表）', () => {
+  const cases = ['123', '１２３', '1e5', '0012', 'true', '1/2', "'kevin", '＇kevin'];
+  cases.forEach((name) => {
+    const r = lib.validateSubmission({ name, pin: '1234', bet: 1, nonce: 'n1' });
+    assert.strictEqual(r.ok, false, JSON.stringify(name) + ' 應該被拒絕');
+    assert.strictEqual(r.reason, 'bad_name', JSON.stringify(name) + ' 應該回傳 bad_name');
+  });
+});
+
+test('validateSubmission 拒絕會在 Sheet 儲存格變型別的 nonce（破壞冪等）', () => {
+  const cases = ['-A2', '-1-1', '--x', '12345'];
+  cases.forEach((nonce) => {
+    const r = lib.validateSubmission({ name: '阿明', pin: '1234', bet: 1, nonce });
+    assert.strictEqual(r.ok, false, JSON.stringify(nonce) + ' 應該被拒絕');
+    assert.strictEqual(r.reason, 'bad_nonce', JSON.stringify(nonce) + ' 應該回傳 bad_nonce');
+  });
+});
+
+test('validateSubmission 拒絕 NFKC 展開後超過 20 字的 playerId（U+2A76 -> "==="）', () => {
+  // 'a'（1字）+ 19 個 U+2A76，來源字串共 20 字，NFKC 後 playerId 長達 58 字。
+  // 註解曾宣稱 NFKC 只會讓字元變短或不變，這個字元證明是錯的。
+  const name = 'a' + '⩶'.repeat(19);
+  assert.strictEqual(name.length, 20);
+  const r = lib.validateSubmission({ name, pin: '1234', bet: 1, nonce: 'n1' });
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.reason, 'bad_name');
+});
+
+test('validateSubmission 正常名字仍必須通過（不能誤傷真玩家）', () => {
+  const goodNames = ['阿明', '小美', 'Kevin', '大 雄', '007阿明', '陳'.repeat(20), 'Player1'];
+  goodNames.forEach((name) => {
+    const r = lib.validateSubmission({ name, pin: '1234', bet: 1, nonce: 'n1' });
+    assert.strictEqual(r.ok, true, JSON.stringify(name) + ' 應該通過');
+    assert.ok('playerId' in r);
+  });
+});
+
+// --- 讀取端防禦：getValues() 可能回傳數字或布林，不應該讓比對整組失效 ---
+test('nextSeq 在 player_id 讀回是數字時仍能算出正確序號', () => {
+  const rows = [
+    row('2026-08-26T14:03:11+08:00', 123, '123', 1, 16, 24, 78412, 85000, 8.40, 'n1'),
+    row('2026-08-27T10:00:00+08:00', 123, '123', 2, 15, 23, 79200, 78000, 1.52, 'n2'),
+  ];
+  assert.strictEqual(lib.nextSeq(rows, '123'), 3);
+});
+
+test('hasRecentNonce 在 nonce 讀回是數字時仍能比對到', () => {
+  const now = Date.parse('2026-09-02T21:47:35+08:00');
+  const rows = [
+    row('2026-09-02T21:47:05+08:00', '阿明', '阿明', 1, 9, 18, 79615, 82000, 2.99, 12345),
+  ];
+  assert.strictEqual(lib.hasRecentNonce(rows, '12345', now), true);
+});
+
 // --- 行情 API 回應解析 ---
 test('parseTickerPrice 取出價格並轉成 number（Coinbase Exchange）', () => {
   assert.strictEqual(
