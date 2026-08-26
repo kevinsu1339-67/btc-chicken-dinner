@@ -36,10 +36,68 @@ function isClosed(nowMs, settleMs) {
   return nowMs >= s;
 }
 
+// bets 分頁的欄序。Code.gs 讀寫、rowToBet 解析都以此為準。
+const BET_COLS = ['ts', 'player_id', 'name', 'seq', 'days_left',
+                  'tol', 'mkt', 'bet', 'guts', 'src', 'nonce'];
+
+function rowToBet(row) {
+  const o = {};
+  for (let i = 0; i < BET_COLS.length; i++) o[BET_COLS[i]] = row[i];
+  return o;
+}
+
+// 每人只留 seq 最大的那筆。不依賴列順序，因為 Sheet 有可能被手動排序過。
+function rosterFromRows(rows) {
+  const byPlayer = {};
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || r[1] === '' || r[1] == null) continue;
+    const b = rowToBet(r);
+    const prev = byPlayer[b.player_id];
+    if (!prev || Number(b.seq) > Number(prev.seq)) byPlayer[b.player_id] = b;
+  }
+  return Object.keys(byPlayer).map((k) => {
+    const b = byPlayer[k];
+    // 只挑前端需要的欄位。nonce 與 player_id 不外流。
+    return {
+      name: b.name,
+      bet: Number(b.bet),
+      mkt: Number(b.mkt),
+      tol: Number(b.tol),
+      guts: Number(b.guts),
+      ts: b.ts
+    };
+  });
+}
+
+function nextSeq(rows, playerId) {
+  let max = 0;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (r && r[1] === playerId) max = Math.max(max, Number(r[3]) || 0);
+  }
+  return max + 1;
+}
+
+// 冪等檢查：雙擊或網路重試會用同一個 nonce 送兩次，只能寫一列。
+// 由尾端往回掃，一旦看到超出時間窗的列就停，不必掃完整張表。
+function hasRecentNonce(rows, nonce, nowMs, windowMs) {
+  const w = (windowMs === undefined) ? 60000 : windowMs;
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i];
+    if (!r) continue;
+    const t = Date.parse(r[0]);
+    if (!isNaN(t) && nowMs - t > w) break;
+    if (r[10] === nonce) return true;
+  }
+  return false;
+}
+
 // 檔尾匯出。Apps Script 沒有 module，typeof 檢查讓這段在 GAS 被安靜略過。
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    SETTLE_MS, MS_PER_DAY,
-    normalizeName, daysLeftFrom, tolFor, gutsOf, multOf, isClosed
+    SETTLE_MS, MS_PER_DAY, BET_COLS,
+    normalizeName, daysLeftFrom, tolFor, gutsOf, multOf, isClosed,
+    rowToBet, rosterFromRows, nextSeq, hasRecentNonce
   };
 }

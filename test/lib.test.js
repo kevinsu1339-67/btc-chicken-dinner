@@ -66,3 +66,57 @@ test('isClosed 在截止瞬間就成立', () => {
   assert.strictEqual(lib.isClosed(at('2026-09-10T23:59:59+08:00')), false);
   assert.strictEqual(lib.isClosed(at('2026-09-11T00:00:00+08:00')), true);
 });
+
+// --- bets 列聚合 ---
+// 欄序：ts, player_id, name, seq, days_left, tol, mkt, bet, guts, src, nonce
+const row = (ts, pid, name, seq, dl, tol, mkt, bet, guts, nonce) =>
+  [ts, pid, name, seq, dl, tol, mkt, bet, guts, 'live', nonce];
+
+const SAMPLE = [
+  row('2026-08-26T14:03:11+08:00', '阿明', '阿明', 1, 16, 24, 78412, 85000, 8.40, 'n1'),
+  row('2026-08-27T10:00:00+08:00', '小美', '小美', 1, 15, 23, 79200, 78000, 1.52, 'n2'),
+  row('2026-09-02T21:47:05+08:00', '阿明', '阿明', 2, 9, 18, 79615, 82000, 2.99, 'n3'),
+];
+
+test('rosterFromRows 每人只留 seq 最大的那筆', () => {
+  const r = lib.rosterFromRows(SAMPLE);
+  assert.strictEqual(r.length, 2);
+  const ming = r.find((x) => x.name === '阿明');
+  assert.strictEqual(ming.bet, 82000);
+  assert.strictEqual(ming.tol, 18);
+  assert.strictEqual(ming.ts, '2026-09-02T21:47:05+08:00');
+});
+
+test('rosterFromRows 即使列順序被打亂也取得到最新一筆', () => {
+  const shuffled = [SAMPLE[2], SAMPLE[0], SAMPLE[1]];
+  const ming = lib.rosterFromRows(shuffled).find((x) => x.name === '阿明');
+  assert.strictEqual(ming.bet, 82000);
+});
+
+test('rosterFromRows 忽略空白列，且不外洩 nonce', () => {
+  const r = lib.rosterFromRows(SAMPLE.concat([['', '', '', '', '', '', '', '', '', '', '']]));
+  assert.strictEqual(r.length, 2);
+  assert.strictEqual(r[0].nonce, undefined);
+});
+
+test('rosterFromRows 把數字欄轉成 number', () => {
+  const asText = [row('2026-08-26T14:03:11+08:00', '阿明', '阿明', '1', '16', '24', '78412', '85000', '8.40', 'n1')];
+  const r = lib.rosterFromRows(asText);
+  assert.strictEqual(r[0].bet, 85000);
+  assert.strictEqual(typeof r[0].tol, 'number');
+});
+
+test('nextSeq 接續該玩家的序號，新玩家從 1 開始', () => {
+  assert.strictEqual(lib.nextSeq(SAMPLE, '阿明'), 3);
+  assert.strictEqual(lib.nextSeq(SAMPLE, '小美'), 2);
+  assert.strictEqual(lib.nextSeq(SAMPLE, '大雄'), 1);
+  assert.strictEqual(lib.nextSeq([], '阿明'), 1);
+});
+
+test('hasRecentNonce 在時間窗內認得重複，窗外不認', () => {
+  const now = Date.parse('2026-09-02T21:47:35+08:00'); // 距最後一列 30 秒
+  assert.strictEqual(lib.hasRecentNonce(SAMPLE, 'n3', now), true);
+  assert.strictEqual(lib.hasRecentNonce(SAMPLE, 'n9', now), false);
+  const later = Date.parse('2026-09-02T21:49:05+08:00'); // 距最後一列 120 秒
+  assert.strictEqual(lib.hasRecentNonce(SAMPLE, 'n3', later), false);
+});
