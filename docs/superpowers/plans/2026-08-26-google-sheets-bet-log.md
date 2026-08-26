@@ -467,7 +467,7 @@ player_id | name | pin_hash | first_ts
 =SORT(UNIQUE(FILTER(bets!B2:B, bets!B2:B<>"")))
 ```
 
-- `B4` 到 `J4` 分別填入下列公式，然後選取 `B4:J4` 往下拖到第 30 列（30 列足夠容納 13 人並留餘裕）：
+- `B4` 到 `J4` 分別填入下列公式，然後選取 `B4:J4` 往下拖到第 55 列（可容納 50 人，遠超過預期的約 25 人）：
 
 ```
 B4  =IF($A4="","",XLOOKUP($A4, bets!$B$2:$B, bets!$C$2:$C, , 0, -1))
@@ -1526,7 +1526,7 @@ git mv chicken-dinner-bankee.html index.html
 
 ```js
 const API_URL = 'PUT_YOUR_WEB_APP_URL_HERE';  // ← 換成 Task 5 的部署網址
-const TARGET = 13;                            // 參加人數，只影響「已下注 N/13」的顯示
+const TARGET = 25;                            // 參加人數，只影響「已下注 N/25」的顯示
 const T0 = Date.parse('2026-08-26T00:00:00+08:00');  // 圖表時間軸起點
 const T1 = SETTLE_MS;                                 // 來自 src/lib.js
 
@@ -1985,7 +1985,7 @@ node --test
 ## 開賽前
 - [ ] `bets` 與 `players` 只剩表頭
 - [ ] `current!B1` 清空
-- [ ] `index.html` 的 `TARGET` 改成實際人數
+- [ ] `index.html` 的 `TARGET` 改成實際報名人數（目前預設 25）
 - [ ] 在群組公告：結算價定義、截止時間、改注規則、PIN 要自己記牢
 
 ## 賽中
