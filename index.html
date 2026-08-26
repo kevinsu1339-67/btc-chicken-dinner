@@ -552,12 +552,37 @@ $("bet").onchange = e => { const v = +e.target.value.replace(/[^\d]/g,''); if (v
 $("name").onchange = () => { updateMine(myName()); render(); renderBoard(); };
 document.querySelectorAll(".nudge button").forEach(b => b.onclick = () => { bet += +b.dataset.d; render(); });
 
+/* ===== 走勢線 ===== */
+// 歷史走勢直接向 Coinbase Exchange 取。這是唯讀公開資料,不影響計分,
+// 因此可以由前端抓;計分用的市價一律走伺服器。
+async function loadKlines(){
+  try {
+    // granularity 單位是秒,86400 = 日線。
+    const res = await fetch('https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const raw = await res.json();
+    if (!Array.isArray(raw) || !raw.length) throw new Error('回應格式不對');
+    // Coinbase 回 [time, low, high, open, close, volume],有兩點與 Binance 相反:
+    //   1. time 的單位是「秒」不是毫秒 → 要乘 1000
+    //   2. 排列是新到舊 → 畫折線前必須依時間升冪重排,否則線會來回折疊
+    // close 剛好兩家都在索引 4。
+    klines = raw
+      .map(k => ({ t: Number(k[0]) * 1000, close: Number(k[4]) }))
+      .filter(k => isFinite(k.t) && isFinite(k.close) && k.close > 0 && k.t >= T0)
+      .sort((a, b) => a.t - b.t);
+  } catch (err) {
+    // 抓不到就不畫走勢線,其餘功能照常。
+    klines = [];
+    console.warn('走勢圖資料抓不到:', err.message);
+  }
+}
+
 /* ===== 啟動 ===== */
 (async function boot(){
   const saved = api.loadMe();
   if (saved) { $("name").value = saved.name; $("pin").value = saved.pin; }
 
-  await refresh();
+  await Promise.all([refresh(), loadKlines()]);
   if (saved) updateMine(saved.name);
   render(); renderBoard();
 
