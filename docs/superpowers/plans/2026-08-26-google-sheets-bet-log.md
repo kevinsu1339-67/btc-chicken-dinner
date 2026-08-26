@@ -4,9 +4,9 @@
 
 **Goal:** 讓比特幣預測賽的玩家能在截止前隨時改注，每次送出都在 Google Sheets 留下永久紀錄，且下注時間與市價由伺服器蓋章而非前端聲稱。
 
-**Architecture:** 三層。純函式庫 `src/lib.js` 承載所有計分與聚合邏輯，同時被 Node 測試與 Apps Script 使用；`src/Code.gs` 是薄薄的 Apps Script 層，只負責 Sheet 讀寫、Binance 擷取與 HTTP 進出；`index.html` 是靜態前端，透過 `src/api.js` 與 Web App 溝通。把邏輯全部推進 `lib.js` 是刻意的——Apps Script 難以自動化測試，所以凡是能純函式化的都不留在 `Code.gs`。
+**Architecture:** 三層。純函式庫 `src/lib.js` 承載所有計分與聚合邏輯，同時被 Node 測試與 Apps Script 使用；`src/Code.gs` 是薄薄的 Apps Script 層，只負責 Sheet 讀寫、行情擷取與 HTTP 進出；`index.html` 是靜態前端，透過 `src/api.js` 與 Web App 溝通。把邏輯全部推進 `lib.js` 是刻意的——Apps Script 難以自動化測試，所以凡是能純函式化的都不留在 `Code.gs`。
 
-**Tech Stack:** Vanilla JS（無建置步驟）、Google Apps Script（V8 runtime）、Google Sheets、Node.js 內建 `node --test`（零依賴）、Binance 公開 REST API。
+**Tech Stack:** Vanilla JS（無建置步驟）、Google Apps Script（V8 runtime）、Google Sheets、Node.js 內建 `node --test`（零依賴）、Coinbase Exchange 公開 REST API。
 
 ## Global Constraints
 
@@ -14,7 +14,8 @@
 - `容許值 = round(6 × √剩餘天數)`，`剩餘天數 = max(1, ceil((SETTLE − ts) / 86400000))`
 - `膽量 = abs(bet − mkt) / mkt × 100`，`誤差 = abs(bet − settle) / settle × 100`
 - `SETTLE = 2026-09-11T00:00:00+08:00`，下注截止同一瞬間
-- 結算價定義：Binance BTC/USDT，2026-09-11 00:00 (UTC+8) 開盤價
+- 結算價定義：Coinbase Exchange BTC-USD，2026-09-11 00:00 (UTC+8) 開盤價
+- 行情來源不可改回 Binance：它對 Google 伺服器 IP 回 HTTP 451，Apps Script 用不了
 - `ts`、`days_left`、`tol`、`mkt` 一律由伺服器產生，前端送來的同名值直接丟棄
 - `bets` 分頁 append-only，只新增不修改、不刪除
 - 網頁只顯示每人最新一筆，改注歷程只存在於 Sheet
@@ -29,7 +30,7 @@
 | 檔案 | 職責 |
 |---|---|
 | `src/lib.js` | 純函式：時間換算、容許值、膽量、倍數、名字正規化、bets 列聚合。無任何 I/O。Node 與 GAS 共用 |
-| `src/Code.gs` | Apps Script：`doGet` / `doPost`、Sheet 讀寫、Binance 擷取、PIN 雜湊、鎖。只做 I/O 與組裝 |
+| `src/Code.gs` | Apps Script：`doGet` / `doPost`、Sheet 讀寫、行情擷取、PIN 雜湊、鎖。只做 I/O 與組裝 |
 | `src/api.js` | 前端 API client：GET/POST 封裝、離線暫存、nonce、身分記憶。fetch 與 storage 由外部注入以便測試 |
 | `index.html` | 頁面：DOM 與 SVG 渲染、下注與改注互動。載入 `lib.js` 與 `api.js` |
 | `test/lib.test.js` | `src/lib.js` 的單元測試 |
@@ -522,7 +523,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 4: 打包腳本、Sheet 存取層、Binance 市價擷取
+### Task 4: 打包腳本、Sheet 存取層、市價擷取
 
 `src/lib.js` 與 `src/Code.gs` 是兩個檔，但 Apps Script 專案裡貼一個檔最不容易出錯，所以先做打包腳本，之後每次改完程式碼都用它產生單一檔案。市價擷取排在最前面，因為 `doGet` 與 `doPost` 都依賴它。
 
@@ -547,7 +548,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 在 `test/lib.test.js` 檔尾追加：
 
 ```js
-// --- Binance 回應解析 ---
+// --- 行情 API 回應解析 ---
 test('parseTickerPrice 取出價格並轉成 number', () => {
   assert.strictEqual(
     lib.parseTickerPrice('{"symbol":"BTCUSDT","price":"78412.50000000"}'),
@@ -563,7 +564,7 @@ test('parseTickerPrice 對壞掉的回應要丟例外而不是回 NaN', () => {
 });
 ```
 
-最後一題是關鍵：Binance 被限流或地區封鎖時回的是 HTML 不是 JSON，必須丟例外才能觸發 fallback，回 `NaN` 會讓壞價格寫進 Sheet。
+最後一題是關鍵：行情 API 被限流或地區封鎖時回的是 HTML 不是 JSON，必須丟例外才能觸發 fallback，回 `NaN` 會讓壞價格寫進 Sheet。
 
 - [ ] **Step 2: 跑測試確認它失敗**
 
@@ -578,12 +579,12 @@ node --test
 在 `src/lib.js` 的匯出區塊之前插入：
 
 ```js
-// Binance ticker 回應解析。被限流或地區封鎖時回的是 HTML 而非 JSON，
+// 行情 API 回應解析。預期 ticker 回應有頂層 price 欄位。被限流或地區封鎖時回的是 HTML 而非 JSON，
 // 因此必須丟例外讓上層走 fallback，絕不能回 NaN。
 function parseTickerPrice(text) {
   const o = JSON.parse(text);
   const p = Number(o.price);
-  if (!isFinite(p) || p <= 0) throw new Error('Binance 回應沒有可用的價格：' + text.slice(0, 120));
+  if (!isFinite(p) || p <= 0) throw new Error('行情回應沒有可用的價格：' + text.slice(0, 120));
   return p;
 }
 ```
@@ -653,7 +654,9 @@ chmod +x tools/build-gas.sh
 
 const SHEET_ID = 'PUT_YOUR_SHEET_ID_HERE';  // ← 換成 docs/sheet-setup.md 裡記的 ID
 const TZ = 'Asia/Taipei';
-const TICKER_URL = 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT';
+// Coinbase Exchange ticker。Binance 已被廢棄：api.binance.com 與 data-api.binance.vision
+// 對 Google 伺服器 IP 回應 HTTP 451 或 403，故 Apps Script 無法使用。
+const TICKER_URL = 'https://api.exchange.coinbase.com/products/BTC-USD/ticker';
 
 function sheet_(name) {
   const sh = SpreadsheetApp.openById(SHEET_ID).getSheetByName(name);
@@ -679,7 +682,7 @@ function nowIso_(d) {
   return Utilities.formatDate(d, TZ, "yyyy-MM-dd'T'HH:mm:ssXXX");
 }
 
-// 市價擷取。快取 30 秒，避免每次點擊都打一次 Binance。
+// 市價擷取。快取 30 秒，避免每次點擊都打一次行情 API。
 // 抓不到時退回 bets 最後一列的市價，並標記 src=fallback 讓事後看得出來。
 function fetchMarketPrice_() {
   const cache = CacheService.getScriptCache();
@@ -747,7 +750,7 @@ price=78412.5 src=live
 betRows 筆數=3
 ```
 
-`src` 若是 `fallback`，代表 Binance 打不通——確認不是 Sheet ID 填錯，再看是否為地區封鎖。`betRows 筆數` 應為 3，即 Task 3 灌的假資料；若為 0 代表 Sheet ID 指錯了試算表。
+`src` 若是 `fallback`，代表行情 API 打不通——確認不是 Sheet ID 填錯，再看是否為地區封鎖。`betRows 筆數` 應為 3，即 Task 3 灌的假資料；若為 0 代表 Sheet ID 指錯了試算表。
 
 驗證完把 `checkPrice` 從編輯器刪掉，它不進版控。
 
@@ -755,9 +758,9 @@ betRows 筆數=3
 
 ```bash
 git add tools/build-gas.sh src/Code.gs src/lib.js test/lib.test.js
-git commit -m "新增打包腳本、Sheet 存取層與 Binance 市價擷取
+git commit -m "新增打包腳本、Sheet 存取層與市價擷取
 
-parseTickerPrice 放在 lib.js 並要求對壞回應丟例外——Binance 被限流或
+parseTickerPrice 放在 lib.js 並要求對壞回應丟例外——行情 API 被限流或
 地區封鎖時回的是 HTML 而非 JSON，回 NaN 會讓壞價格寫進 Sheet。
 
 市價快取 30 秒，抓不到時退回 bets 最後一列並標記 src=fallback，
@@ -847,7 +850,7 @@ curl -sL "<貼上你的 Web App 網址>" | python3 -m json.tool
 ````markdown
 # 比特幣開盤價預測賽
 
-9/11 00:00 (UTC+8) Binance BTC/USDT 開盤價，賭一頓飯。
+9/11 00:00 (UTC+8) Coinbase Exchange BTC-USD 開盤價，賭一頓飯。
 
 ## 計分
 
@@ -1808,7 +1811,7 @@ document.querySelectorAll(".nudge button").forEach(b => b.onclick = () => { bet 
 
 ```html
 <div class="foot">
-  結算 = Binance BTC/USDT · 9/11 00:00 UTC+8 開盤價<br>
+  結算 = Coinbase Exchange BTC-USD · 9/11 00:00 UTC+8 開盤價<br>
   餐點倍數 = (1 + 膽量 ÷ 10) × (1 − 誤差 ÷ 容許值)　·　容許值 = round(6 × √剩餘天數)<br>
   截止前可隨時改注,計分只看最新一筆,但每次送出都會留下紀錄。
 </div>
@@ -1873,19 +1876,25 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 在 `index.html` 的 `boot()` 之前插入：
 
 ```js
-// 歷史走勢直接向 Binance 取。這是唯讀公開資料,不影響計分,
+// 歷史走勢直接向 Coinbase Exchange 取。這是唯讀公開資料,不影響計分,
 // 因此可以由前端抓;計分用的市價一律走伺服器。
 async function loadKlines(){
   try {
-    const res = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=20');
+    // granularity 單位是秒,86400 = 日線。
+    const res = await fetch('https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const raw = await res.json();
     if (!Array.isArray(raw) || !raw.length) throw new Error('回應格式不對');
+    // Coinbase 回 [time, low, high, open, close, volume],有兩點與 Binance 相反:
+    //   1. time 的單位是「秒」不是毫秒 → 要乘 1000
+    //   2. 排列是新到舊 → 畫折線前必須依時間升冪重排,否則線會來回折疊
+    // close 剛好兩家都在索引 4。
     klines = raw
-      .map(k => ({ t: Number(k[0]), close: Number(k[4]) }))
-      .filter(k => isFinite(k.t) && isFinite(k.close) && k.close > 0 && k.t >= T0);
+      .map(k => ({ t: Number(k[0]) * 1000, close: Number(k[4]) }))
+      .filter(k => isFinite(k.t) && isFinite(k.close) && k.close > 0 && k.t >= T0)
+      .sort((a, b) => a.t - b.t);
   } catch (err) {
-    // 部分地區封鎖 Binance。抓不到就不畫走勢線,其餘功能照常。
+    // 抓不到就不畫走勢線,其餘功能照常。
     klines = [];
     console.warn('走勢圖資料抓不到:', err.message);
   }
@@ -1913,8 +1922,12 @@ async function loadKlines(){
 重整 `http://localhost:8000/`：
 
 1. 戰況頁的散點圖出現一條青色 BTC 走勢線，右端價格與狀態列的市價接近
-2. 開發者工具的 Network 應看到一筆 `klines` 請求，狀態 200
-3. 在 Network 分頁把 `api.binance.com` 加入封鎖清單後重整 → 走勢線消失，但排行榜、下注、狀態列全部照常運作，Console 有一行 `走勢圖資料抓不到` 警告
+2. 開發者工具的 Network 應看到一筆 `candles` 請求，狀態 200。
+   **若是 CORS 錯誤**（Console 出現 `blocked by CORS policy`），代表前端不能直連，
+   改為在 `Code.gs` 加一個回傳日線的端點由伺服器代取——不要為此放棄降級行為
+3. 走勢線的時間方向必須由左到右遞增。若線條來回折疊，代表忘了依時間升冪重排
+4. 在 Network 分頁把 `api.exchange.coinbase.com` 加入封鎖清單後重整 → 走勢線消失，
+   但排行榜、下注、狀態列全部照常運作，Console 有一行 `走勢圖資料抓不到` 警告
 
 第 3 點是這個任務的重點：被封鎖的地區不能因為畫不出走勢線就整頁掛掉。
 
@@ -1924,11 +1937,14 @@ async function loadKlines(){
 git add index.html
 git commit -m "走勢圖改用真實 K 線並加上降級
 
-歷史走勢是唯讀公開資料、不影響計分,所以由前端直接向 Binance 取;
+歷史走勢是唯讀公開資料、不影響計分,所以由前端直接向 Coinbase Exchange 取;
 計分用的市價仍一律走伺服器端。
 
-部分地區會封鎖 Binance,因此抓不到時只是不畫走勢線,
-排行榜與下注功能照常——不能因為畫不出圖就整頁掛掉。
+Coinbase 的 candles 與 Binance 的 klines 有兩點相反:時間單位是秒而非毫秒,
+且排列為新到舊。兩者都要轉換,否則走勢線會畫在錯誤位置或來回折疊。
+
+抓不到時只是不畫走勢線,排行榜與下注功能照常——
+不能因為畫不出圖就整頁掛掉。
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
@@ -2001,11 +2017,11 @@ node --test
 每天看一次 `current`，把排行榜截圖丟群組。
 `bets` 分頁是完整的改注歷程，只有你看得到——賽後公布會很有戲。
 
-若某列的 `src` 是 `fallback`，代表當下 Binance 抓不到、用了前一筆市價。
+若某列的 `src` 是 `fallback`，代表當下行情 API 抓不到、用了前一筆市價。
 偶爾一兩筆無妨；若連續出現，檢查 Apps Script 的執行記錄。
 
 ## 9/11 結算
-1. 取 Binance BTC/USDT 9/11 00:00 (UTC+8) 的開盤價
+1. 取 Coinbase Exchange BTC-USD 9/11 00:00 (UTC+8) 的開盤價
 2. 填進 `current!B1`
 3. 倍數欄即為每人的餐點份數
 
@@ -2030,7 +2046,7 @@ node --test
 | 檔案 | 職責 |
 |---|---|
 | `src/lib.js` | 純函式：計分、時間換算、流水帳聚合。Node / Apps Script / 瀏覽器三邊共用 |
-| `src/Code.gs` | Apps Script：HTTP 進出、Sheet 讀寫、Binance 擷取 |
+| `src/Code.gs` | Apps Script：HTTP 進出、Sheet 讀寫、行情擷取 |
 | `src/api.js` | 前端 API client |
 | `index.html` | 頁面 |
 | `tools/build-gas.sh` | 打包成單一 .gs 供貼進 Apps Script |

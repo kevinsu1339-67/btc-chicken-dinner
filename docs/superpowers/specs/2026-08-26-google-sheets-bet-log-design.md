@@ -72,7 +72,7 @@ Google Sheet 內開三個分頁。
 | D | `seq` | 伺服器 | 此玩家第幾次送出，1 = 首注 |
 | E | `days_left` | **伺服器** | `max(1, ceil((SETTLE − ts) / 86400000))` |
 | F | `tol` | **伺服器** | `round(6 × √days_left)` |
-| G | `mkt` | **伺服器** | Binance 現抓的 BTC/USDT 價格 |
+| G | `mkt` | **伺服器** | Coinbase Exchange 現抓的 BTC-USD 價格 |
 | H | `bet` | 前端 | 玩家的預測價 |
 | I | `guts` | 伺服器 | `abs(bet - mkt) / mkt * 100` |
 | J | `src` | 伺服器 | `live` 或 `fallback`（市價來源） |
@@ -143,7 +143,7 @@ Request body 只收四個欄位：
 2. 檢查是否已過截止（`SETTLE_BET`），過了回 `{ok:false, reason:"closed"}`
 3. 檢查 `nonce` 是否在最近 60 秒出現過，是則回傳成功但不寫入
 4. 查 `players` 驗 PIN；未註冊則註冊
-5. `UrlFetchApp` 抓 Binance 現價（`CacheService` 快取 30 秒）
+5. `UrlFetchApp` 抓 Coinbase Exchange 現價（`CacheService` 快取 30 秒）
 6. 伺服器算 `days_left` / `tol` / `guts` / `seq`
 7. `appendRow` 到 `bets`
 8. 回傳與 `doGet` 相同結構的新 roster
@@ -161,11 +161,11 @@ Apps Script 無法回應 OPTIONS，這是唯一可靠的繞法。
 | `window.storage.get/set` | `fetch` 到 Web App |
 | `myId = "U" + random` | 名字 + PIN，`localStorage` 記住免得每次重打 |
 | 下注日下拉選單 + `DL` 常數表 | 移除。日期由伺服器蓋章，玩家不能自選 |
-| `PATH` 寫死的 15 天假價格 | 前端直接打 Binance klines API 拿真實日線畫走勢圖 |
+| `PATH` 寫死的 15 天假價格 | 前端直接打 Coinbase Exchange candles API 拿真實日線畫走勢圖 |
 
-Binance 公開 API 有回 `Access-Control-Allow-Origin: *`，前端可直連。
-但部分地區會被封鎖——走勢圖抓不到時降級為隱藏圖表並顯示提示，不可讓整頁掛掉。
+走勢圖抓不到時降級為隱藏圖表並顯示提示，不可讓整頁掛掉。
 計分用的市價一律走伺服器端（§5），不受此影響。
+前端能否直連需在 Task 9 實測確認 CORS 標頭，不預設它一定可行。
 | 當下市價 | 由 `doGet` 提供 |
 | `sent = true` 永久鎖死輸入 | 「目前這一注」狀態卡 + 「改注」按鈕 |
 | 戰況頁靜態 | 每 30 秒 `doGet` 刷新排行榜 |
@@ -186,7 +186,7 @@ Binance 公開 API 有回 `Access-Control-Allow-Origin: *`，前端可直連。
 | 情境 | 行為 |
 |---|---|
 | 送出失敗（斷網 / Apps Script 掛） | 按鈕恢復可按、輸入保留、紅字明講原因，暫存 `localStorage`，下次開頁提示重送 |
-| Binance 抓不到 | 退回用 `bets` 最後一列的 `mkt`，該列標記 `src=fallback` |
+| 行情 API 抓不到 | 退回用 `bets` 最後一列的 `mkt`，該列標記 `src=fallback` |
 | 雙擊或網路重試 | `nonce` 冪等，60 秒內同 nonce 不重複 `appendRow` |
 | PIN 不符 | 明確回「這個名字已經有人用了，PIN 不對」，不吐 generic error |
 | 已過截止 | 伺服器端拒收。前端隱藏按鈕只是輔助，規則必須寫死在後端 |
@@ -234,10 +234,21 @@ Sheet 本身**不要**設為公開。所有讀寫都以主辦者身分經由 App
 ```
 SETTLE      = 2026-09-11T00:00:00+08:00   // 結算時點
 SETTLE_BET  = 2026-09-11T00:00:00+08:00   // 下注截止 = 9/10 結束，與結算同一瞬間
-SYMBOL      = BTCUSDT                      // Binance
+PRODUCT     = BTC-USD                      // Coinbase Exchange
 ```
 
-結算價定義寫死為：**Binance BTC/USDT，2026-09-11 00:00 (UTC+8) 開盤價**。
+結算價定義寫死為：**Coinbase Exchange BTC-USD，2026-09-11 00:00 (UTC+8) 開盤價**。
+
+原本定為 Binance BTC/USDT。2026-08-26 在實際的 Apps Script 專案實測發現
+**Binance 對 Google 伺服器 IP 回 HTTP 451**（`data-api.binance.vision` 回 403），
+而 Apps Script 跑在 Google 基礎架構上，因此 Binance 永久不可用——與使用者身處何地無關。
+
+同批實測中 Coinbase、Coinbase Exchange、Kraken、Bitstamp、OKX 皆回 200
+（CoinGecko 回 429 限流）。選 Coinbase Exchange 而非 Coinbase 零售端點，是因為
+Exchange 有 `/candles` 端點可查歷史 K 線，結算價才能被全體玩家各自驗證；
+零售端點查不到歷史開盤價，結算當天會變成主辦說了算。
+
+交易對隨之由 BTC/**USDT** 變為 BTC/**USD**，對外公告須寫明。
 
 `SETTLE_BET` 與 `SETTLE` 是同一瞬間——「下注到 9/10 為止」即 9/11 00:00 截止。
 在 9/10 23:59 才下注的人 `days_left = 1`、`tol = 6`，此時市價已幾乎等於結算價，
