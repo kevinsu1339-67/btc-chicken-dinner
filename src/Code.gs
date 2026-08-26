@@ -72,6 +72,9 @@ function doGet() {
       roster: rosterFromRows(betRows_())
     });
   } catch (err) {
-    return json_({ ok: false, reason: 'server_error', message: String(err) });
+    // 本端點為公開無認證 API，故錯誤詳情不可洩露至外部呼叫者。
+    // 完整錯誤已記錄於 Cloud Logging，Sheet 擁有者可據以偵錯。
+    console.error('doGet 拋出例外', err);
+    return json_({ ok: false, reason: 'server_error', message: '伺服器暫時無法使用，請稍後再試' });
   }
 }
