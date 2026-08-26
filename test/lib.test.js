@@ -132,7 +132,14 @@ test('hasRecentNonce 必須掃描所有列，即使列順序反向', () => {
   assert.strictEqual(lib.hasRecentNonce(reversed, 'n_newer', now), true);
 });
 
-// --- Binance 回應解析 ---
+// --- 行情 API 回應解析 ---
+test('parseTickerPrice 取出價格並轉成 number（Coinbase Exchange）', () => {
+  assert.strictEqual(
+    lib.parseTickerPrice('{"ask":"79131.72","bid":"79131.71","volume":"8399.11957497","trade_id":1083309461,"price":"79131.71","size":"0.00000007","time":"2026-08-26T06:01:10.3Z"}'),
+    79131.71
+  );
+});
+
 test('parseTickerPrice 取出價格並轉成 number', () => {
   assert.strictEqual(
     lib.parseTickerPrice('{"symbol":"BTCUSDT","price":"78412.50000000"}'),

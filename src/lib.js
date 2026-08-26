@@ -93,12 +93,12 @@ function hasRecentNonce(rows, nonce, nowMs, windowMs) {
   return false;
 }
 
-// Binance ticker 回應解析。被限流或地區封鎖時回的是 HTML 而非 JSON，
+// 行情 API 回應解析。預期 ticker 回應有頂層 price 欄位。被限流或地區封鎖時回的是 HTML 而非 JSON，
 // 因此必須丟例外讓上層走 fallback，絕不能回 NaN。
 function parseTickerPrice(text) {
   const o = JSON.parse(text);
   const p = Number(o.price);
-  if (!isFinite(p) || p <= 0) throw new Error('Binance 回應沒有可用的價格：' + text.slice(0, 120));
+  if (!isFinite(p) || p <= 0) throw new Error('Ticker 回應沒有可用的價格：' + text.slice(0, 120));
   return p;
 }
 

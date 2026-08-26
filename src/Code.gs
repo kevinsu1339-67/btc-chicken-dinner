@@ -2,7 +2,9 @@
 
 const SHEET_ID = '1j3ZR5aMRWtVA2ILoydljTk1UjQ61qCn7KDPSqlOjha0';  // docs/sheet-setup.md
 const TZ = 'Asia/Taipei';
-const TICKER_URL = 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT';
+// Coinbase Exchange ticker。Binance 已被廢棄：api.binance.com 與 data-api.binance.vision
+// 對 Google 伺服器 IP 回應 HTTP 451 或 403，故 Apps Script 無法使用。
+const TICKER_URL = 'https://api.exchange.coinbase.com/products/BTC-USD/ticker';
 
 function sheet_(name) {
   const sh = SpreadsheetApp.openById(SHEET_ID).getSheetByName(name);
@@ -28,7 +30,7 @@ function nowIso_(d) {
   return Utilities.formatDate(d, TZ, "yyyy-MM-dd'T'HH:mm:ssXXX");
 }
 
-// 市價擷取。快取 30 秒，避免每次點擊都打一次 Binance。
+// 市價擷取。快取 30 秒，避免每次點擊都打一次 Coinbase Exchange。
 // 抓不到時退回 bets 最後一列的市價，並標記 src=fallback 讓事後看得出來。
 function fetchMarketPrice_() {
   const cache = CacheService.getScriptCache();
