@@ -1,0 +1,457 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+:root{
+  --aqua:#00BFC4;
+  --aqua-d:#00959B;
+  --aqua-l:#7FE6E8;
+  --navy:#0E2A42;
+  --navy-2:#3A5872;
+  --bg:#F1F5F7;
+  --card:#FFFFFF;
+  --line:#E2EAEE;
+  --coral:#FF6B5A;
+  --sun:#FFB020;
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  background:var(--bg);color:var(--navy);
+  font-family:'Plus Jakarta Sans','Noto Sans TC',sans-serif;
+  padding-bottom:calc(76px + env(safe-area-inset-bottom));
+  -webkit-font-smoothing:antialiased;
+}
+.app{max-width:430px;margin:0 auto;background:var(--bg);min-height:100vh}
+:focus-visible{outline:2px solid var(--aqua-d);outline-offset:2px}
+
+/* ---------- top ---------- */
+.top{
+  background:linear-gradient(135deg,var(--aqua) 0%,var(--aqua-d) 100%);
+  color:#fff;padding:calc(16px + env(safe-area-inset-top)) 20px 22px;
+  border-radius:0 0 22px 22px;position:relative;overflow:hidden;
+}
+.top::after{
+  content:"";position:absolute;right:-34px;top:-42px;width:150px;height:150px;
+  border-radius:50%;background:rgba(255,255,255,.11);
+}
+.top .eyebrow{font-size:10px;letter-spacing:.22em;font-weight:700;opacity:.82}
+.top h1{
+  font-size:20px;font-weight:800;line-height:1.25;margin-top:6px;letter-spacing:-.01em;
+}
+.top h1 span{display:block;font-size:13px;font-weight:500;opacity:.9;margin-top:4px;letter-spacing:.02em}
+.pot{
+  display:flex;gap:10px;margin-top:16px;position:relative;
+}
+.pot div{
+  flex:1;background:rgba(255,255,255,.16);border-radius:11px;padding:9px 10px;
+  backdrop-filter:blur(3px);
+}
+.pot .k{font-size:9.5px;opacity:.85;font-weight:600;letter-spacing:.06em}
+.pot .v{font-size:18px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.pot .v small{font-size:10px;font-weight:600;opacity:.8}
+
+/* ---------- shell ---------- */
+.pane{padding:14px 14px 0}
+.pane[hidden]{display:none}
+.card{background:var(--card);border-radius:var(--r);padding:15px 15px 16px;
+  margin-bottom:12px;box-shadow:0 1px 3px rgba(14,42,66,.07)}
+h2{font-size:14px;font-weight:800;letter-spacing:-.01em}
+.sub{font-size:11px;color:var(--navy-2);margin-top:3px;line-height:1.65}
+.lbl{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--navy-2);
+  display:block;margin-bottom:5px}
+.num{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+.num small{font-size:11px;font-weight:600;color:var(--navy-2)}
+svg{display:block;width:100%;height:auto}
+
+/* ---------- scenario ---------- */
+.scn{display:flex;align-items:baseline;justify-content:space-between}
+.scn .big{font-size:27px;font-weight:800;color:var(--aqua-d);font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;margin:14px 0 2px}
+input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:3px;background:var(--line)}
+input[type=range]::-moz-range-track{height:5px;border-radius:3px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+  background:#fff;border:3px solid var(--aqua);margin-top:-10.5px;box-shadow:0 2px 7px rgba(0,149,155,.35)}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#fff;
+  border:3px solid var(--aqua);box-shadow:0 2px 7px rgba(0,149,155,.35)}
+.ends{display:flex;justify-content:space-between;font-size:10px;color:var(--navy-2);
+  font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- player rows ---------- */
+.plist{display:flex;flex-direction:column;gap:7px}
+.p{
+  display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:12px;
+  background:var(--bg);position:relative;overflow:hidden;
+}
+.p .fill{position:absolute;left:0;top:0;bottom:0;background:rgba(0,191,196,.13);border-radius:12px}
+.p.lose .fill{background:rgba(255,107,90,.11)}
+.p > *{position:relative}
+.p .rk{font-size:11px;font-weight:800;color:var(--navy-2);width:15px;flex:none;text-align:center}
+.p.gold .rk{color:var(--sun)}
+.av{
+  width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;
+  background:var(--aqua);color:#fff;font-size:13px;font-weight:700;
+}
+.p.lose .av{background:var(--navy-2)}
+.p.me .av{background:var(--sun)}
+.pi{flex:1;min-width:0}
+.pn{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:5px}
+.tag{font-size:9px;font-weight:700;background:var(--sun);color:#fff;padding:1px 5px;border-radius:5px}
+.pm{font-size:10.5px;color:var(--navy-2);margin-top:2px;font-variant-numeric:tabular-nums}
+.px{text-align:right;flex:none}
+.px .x{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--aqua-d)}
+.p.lose .px .x{color:var(--coral)}
+.px .d{font-size:12px;line-height:1.2;margin-top:1px}
+.empty{text-align:center;color:var(--navy-2);font-size:12.5px;padding:26px 0;line-height:1.9}
+
+/* ---------- bet ---------- */
+.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+select{
+  width:100%;font-family:inherit;font-size:16px;font-weight:800;color:var(--navy);
+  background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 9px;
+}
+.betin{
+  width:100%;font-family:inherit;font-size:40px;font-weight:800;color:var(--aqua-d);
+  text-align:center;border:none;background:transparent;font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;
+}
+.betin:focus{outline:none}
+.nudge{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:14px}
+.nudge button{
+  font-family:inherit;font-size:12px;font-weight:700;color:var(--navy-2);
+  background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 2px;cursor:pointer;
+}
+.nudge button:active{background:var(--aqua-l);border-color:var(--aqua)}
+.meter{
+  background:linear-gradient(135deg,#062E3A,#0E2A42);color:#fff;border-radius:var(--r);
+  padding:18px 16px;text-align:center;margin-top:14px;
+}
+.meter .vd{font-size:13px;font-weight:800;letter-spacing:.04em;color:var(--aqua-l)}
+.meter .vd.lose{color:var(--coral)}
+.meter .dr{font-size:27px;margin:8px 0 2px;letter-spacing:2px}
+.meter .kx{font-size:31px;font-weight:800;font-variant-numeric:tabular-nums}
+.meter .cap{font-size:10.5px;opacity:.72;margin-top:3px}
+.risks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;
+  border-top:1px solid rgba(255,255,255,.16);padding-top:12px}
+.risks div{font-size:9.5px;opacity:.75;font-weight:600}
+.risks b{display:block;font-size:15px;opacity:1;margin-top:3px;font-variant-numeric:tabular-nums}
+.act{display:flex;gap:9px;margin-top:13px}
+.act input{
+  flex:1;font-family:inherit;font-size:15px;font-weight:600;padding:12px;
+  border:1px solid var(--line);border-radius:11px;background:var(--bg);color:var(--navy);
+}
+.go{
+  font-family:inherit;font-size:15px;font-weight:800;letter-spacing:.04em;
+  background:var(--aqua);color:#fff;border:none;padding:12px 26px;border-radius:11px;cursor:pointer;
+  box-shadow:0 3px 10px rgba(0,191,196,.35);
+}
+.go:active{background:var(--aqua-d)}
+.go:disabled{background:var(--line);color:var(--navy-2);box-shadow:none}
+.msg{font-size:11.5px;color:var(--aqua-d);font-weight:600;margin-top:9px;min-height:16px;line-height:1.6}
+.ghost{
+  font-family:inherit;font-size:11.5px;font-weight:700;background:transparent;
+  border:1px solid var(--line);color:var(--navy-2);padding:9px 13px;border-radius:9px;
+  cursor:pointer;margin-top:11px;margin-right:7px;
+}
+.ghost:active{border-color:var(--aqua);color:var(--aqua-d)}
+.foot{text-align:center;font-size:9.5px;color:var(--navy-2);line-height:2;padding:6px 20px 18px}
+
+/* ---------- bottom nav ---------- */
+nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
+  border-top:1px solid var(--line);display:flex;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+nav .in{max-width:430px;margin:0 auto;display:flex;width:100%}
+nav button{
+  flex:1;background:none;border:none;padding:9px 0 10px;cursor:pointer;
+  font-family:inherit;font-size:11px;font-weight:700;color:var(--navy-2);
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+nav button[aria-selected=true]{color:var(--aqua-d)}
+nav .ic{
+  width:26px;height:26px;border-radius:9px;display:grid;place-items:center;font-size:14px;
+  background:transparent;transition:background .15s;
+}
+nav button[aria-selected=true] .ic{background:var(--aqua-l)}
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="eyebrow">WINNER WINNER CHICKEN DINNER</div>
+    <h1>比特幣開盤價預測賽
+      <span>9/11 00:00 開盤結算 · 賭一頓飯</span>
+    </h1>
+    <div class="pot">
+      <div><div class="k">已下注</div><div class="v" id="pCount">0<small>/13</small></div></div>
+      <div><div class="k">餐點池</div><div class="v" id="pTotal">0.0<small> 份</small></div></div>
+      <div><div class="k">吃到飯</div><div class="v" id="pWin">0<small> 人</small></div></div>
+    </div>
+  </div>
+
+  <!-- ================= 戰況 ================= -->
+  <div class="pane" id="p1">
+    <div class="card">
+      <div class="scn">
+        <div><span class="lbl">假設 9/11 開在</span>
+          <div class="big">$<span id="sv"></span></div></div>
+        <div style="text-align:right"><span class="lbl">主辦盈虧</span>
+          <div class="num" id="sDiff">—</div></div>
+      </div>
+      <input type="range" id="settle" min="68000" max="94000" step="250" aria-label="假設結算價">
+      <div class="ends"><span>68,000</span><span>拉動看排名怎麼洗牌</span><span>94,000</span></div>
+    </div>
+
+    <div class="card">
+      <h2>誰押在哪裡</h2>
+      <p class="sub">青線是 BTC 走勢,圓點是每個人下注的位置。<br>虛線越長 = 他當時越敢偏離市價。</p>
+      <svg id="board" viewBox="0 0 390 300" role="img" aria-label="全場下注分布圖"></svg>
+    </div>
+
+    <div class="card">
+      <h2>排行榜</h2>
+      <p class="sub">依上面的假設結算價即時重排</p>
+      <div class="plist" id="plist" style="margin-top:12px"></div>
+      <div class="empty" id="empty">還沒有人下注。<br>切到「下注」開第一張券。</div>
+      <button class="ghost" id="demo">載入 13 人範例</button>
+      <button class="ghost" id="clear">清空紀錄</button>
+    </div>
+  </div>
+
+  <!-- ================= 下注 ================= -->
+  <div class="pane" id="p2" hidden>
+    <div class="card">
+      <div class="f3">
+        <div><span class="lbl">下注日</span><select id="day"></select></div>
+        <div><span class="lbl">當下市價</span><div class="num" style="padding-top:7px">$<span id="mkt"></span></div></div>
+        <div><span class="lbl">容許誤差</span><div class="num" style="padding-top:7px">±<span id="tol"></span><small>%</small></div></div>
+      </div>
+      <p class="sub" style="margin-top:10px">距 9/11 還有 <b id="dleft"></b> 天。越早下注,容許誤差越寬 — 這是早鳥的優勢。</p>
+    </div>
+
+    <div class="card">
+      <span class="lbl" style="text-align:center">你賭 9/11 開在</span>
+      <input class="betin" id="bet" type="text" inputmode="numeric" aria-label="預測價格">
+      <input type="range" id="slider" aria-label="調整預測價格">
+      <div class="ends"><span id="rlo"></span><span>當下市價</span><span id="rhi"></span></div>
+      <div class="nudge">
+        <button data-d="-2000">−2000</button><button data-d="-500">−500</button>
+        <button data-d="500">+500</button><button data-d="2000">+2000</button>
+      </div>
+
+      <div class="meter">
+        <div class="vd" id="verdict">WINNER WINNER</div>
+        <div class="dr" id="plates">🍗</div>
+        <div class="kx" id="kmax">1.00×</div>
+        <div class="cap">若 9/11 剛好開在你押的價</div>
+        <div class="risks">
+          <div>押錯 2%<b id="m2">—</b></div>
+          <div>押錯 5%<b id="m5">—</b></div>
+          <div>押錯 8%<b id="m8">—</b></div>
+        </div>
+      </div>
+
+      <div class="f3" style="margin-top:14px;grid-template-columns:1fr 1fr">
+        <div><span class="lbl">膽量 偏離市價</span><div class="num" id="guts"></div></div>
+        <div><span class="lbl">歸零門檻</span><div class="num" id="zero"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>賠率全景</h2>
+      <p class="sub">橫軸 = 9/11 實際開在多少　縱軸 = 你換到幾份餐</p>
+      <svg id="chart" viewBox="0 0 390 175" role="img" aria-label="賠率分布圖"></svg>
+      <div class="act">
+        <input type="text" id="name" placeholder="你的名字" maxlength="8" aria-label="你的名字">
+        <button class="go" id="submit">下注</button>
+      </div>
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    結算 = Binance BTC/USDT · 9/11 00:00 UTC+8 開盤價<br>
+    餐點倍數 = (1 + 膽量 ÷ 10) × (1 − 誤差 ÷ 容許值)
+  </div>
+</div>
+
+<nav role="tablist"><div class="in">
+  <button role="tab" id="t1" aria-selected="true"><span class="ic">📊</span>戰況</button>
+  <button role="tab" id="t2" aria-selected="false"><span class="ic">🍗</span>下注</button>
+</div></nav>
+
+<script>
+const PATH={"8/26":78000,"8/27":79200,"8/28":78400,"8/29":76900,"8/30":75500,"8/31":76800,
+"9/01":78300,"9/02":79600,"9/03":78900,"9/04":80200,"9/05":81500,"9/06":80800,
+"9/07":82300,"9/08":83100,"9/09":82400};
+const DL={"8/26":16,"8/27":15,"8/28":14,"8/29":13,"8/30":12,"8/31":11,"9/01":10,"9/02":9,
+"9/03":8,"9/04":7,"9/05":6,"9/06":5,"9/07":4,"9/08":3,"9/09":2};
+const DAYS=Object.keys(PATH), KEY="chickendinner:bets", TARGET=13;
+const SEED=[["阿明","8/26",85000],["小美","8/26",78000],["阿凱","8/27",72000],
+["老王","8/30",70000],["阿哲","8/30",82000],["曉琪","8/31",82200],["大雄","9/02",88000],
+["靜香","9/03",82500],["阿龍","9/04",84000],["小賴","9/05",78000],["佩佩","9/07",82300],
+["小柔","9/09",82000],["阿威","9/09",88000]];
+
+const tolOf=d=>Math.round(6*Math.sqrt(DL[d]));
+const mult=(bet,mkt,s,tol)=>{
+  const g=Math.abs(bet-mkt)/mkt*100, e=Math.abs(bet-s)/s*100;
+  return Math.max(0,(1+g/10)*(1-e/tol));
+};
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const $=i=>document.getElementById(i);
+const esc=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+
+let day="8/26", bet=78000, roster=[], sent=false, settle=82400;
+const myId="U"+Math.floor(Math.random()*9000+1000);
+DAYS.forEach(d=>{const o=document.createElement("option");o.value=d;o.textContent=d;$("day").appendChild(o);});
+
+[["t1","p1"],["t2","p2"]].forEach(([t,p],i)=>{
+  $(t).onclick=()=>{
+    ["t1","t2"].forEach((x,j)=>$(x).setAttribute("aria-selected",j===i));
+    $("p1").hidden=i!==0; $("p2").hidden=i!==1;
+    window.scrollTo({top:0,behavior:'smooth'});
+    if(i===0) renderBoard();
+  };
+});
+
+/* ===== 戰況 ===== */
+function drum(k){
+  const f=Math.floor(k), fr=k-f;
+  let s="🍗".repeat(Math.min(f,5));
+  if(fr>.12&&f<5) s+=`<span style="opacity:${(.22+fr*.78).toFixed(2)}">🍗</span>`;
+  return s||`<span style="opacity:.16">🍗</span>`;
+}
+function renderBoard(){
+  $("sv").textContent=fmt(settle); $("settle").value=settle;
+  const N=roster.length;
+  const tot=roster.reduce((a,r)=>a+mult(r.bet,r.mkt,settle,r.tol),0);
+  const win=roster.filter(r=>mult(r.bet,r.mkt,settle,r.tol)>=1).length;
+  $("pCount").innerHTML=N+`<small>/${TARGET}</small>`;
+  $("pTotal").innerHTML=tot.toFixed(1)+"<small> 份</small>";
+  $("pWin").innerHTML=win+"<small> 人</small>";
+  const d=N-tot;
+  $("sDiff").innerHTML=(d>=0?"+":"")+d.toFixed(1)+"<small> 份</small>";
+  $("sDiff").style.color=d>=0?"var(--aqua-d)":"var(--coral)";
+  drawScatter(); drawList();
+}
+function drawScatter(){
+  const W=390,H=300,L=40,R=10,T=16,B=30;
+  const all=[...DAYS,"9/10","9/11"];
+  const ps=[...Object.values(PATH),...roster.map(r=>r.bet),settle];
+  let lo=Math.min(...ps),hi=Math.max(...ps); const pd=(hi-lo)*.1||1000; lo-=pd;hi+=pd;
+  const x=i=>L+i/(all.length-1)*(W-L-R), y=p=>H-B-(p-lo)/(hi-lo)*(H-B-T);
+  let s="";
+  for(let i=0;i<=4;i++){const p=lo+(hi-lo)*i/4;
+    s+=`<line x1="${L}" y1="${y(p)}" x2="${W-R}" y2="${y(p)}" stroke="#E2EAEE"/>
+    <text x="${L-5}" y="${y(p)+3.5}" text-anchor="end" font-size="8.5" font-weight="600" fill="#3A5872">${fmt(p/1000)}k</text>`;}
+  s+=`<line x1="${L}" y1="${y(settle)}" x2="${W-R}" y2="${y(settle)}" stroke="#FF6B5A" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="${W-R}" y="${y(settle)-6}" text-anchor="end" font-size="9" font-weight="800" fill="#FF6B5A">假設 ${fmt(settle)}</text>`;
+  s+=`<polyline points="${DAYS.map((d,i)=>`${x(i)},${y(PATH[d])}`).join(" ")}" fill="none" stroke="#00BFC4" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const seen={};
+  roster.forEach(r=>{
+    const i=DAYS.indexOf(r.day); if(i<0)return;
+    const cx=x(i),cy=y(r.bet),m=mult(r.bet,r.mkt,settle,r.tol),me=r.id===myId;
+    s+=`<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${y(r.mkt)}" stroke="#3A5872" stroke-opacity=".35" stroke-dasharray="2 3"/>`;
+    s+=`<circle cx="${cx}" cy="${cy}" r="${me?6.5:5.5}" fill="${m>=1?'#00BFC4':'#FF6B5A'}" stroke="${me?'#FFB020':'#fff'}" stroke-width="${me?2.5:1.5}"/>`;
+    const k=Math.round(cy/12); seen[i]=seen[i]||{};
+    const dy=seen[i][k]?12:3.5; seen[i][k]=1;
+    s+=`<text x="${cx+9}" y="${cy+dy}" font-size="9.5" font-weight="700" fill="#0E2A42">${esc(r.name)}</text>`;
+  });
+  all.forEach((d,i)=>{ if(i%4===0||i===all.length-1)
+    s+=`<text x="${x(i)}" y="${H-B+15}" text-anchor="middle" font-size="8.5" font-weight="600" fill="#3A5872">${d}</text>`;});
+  $("board").innerHTML=s;
+}
+function drawList(){
+  const el=$("plist"); el.innerHTML="";
+  $("empty").style.display=roster.length?"none":"block";
+  const sorted=roster.slice().sort((a,b)=>mult(b.bet,b.mkt,settle,b.tol)-mult(a.bet,a.mkt,settle,a.tol));
+  const top=sorted.length?mult(sorted[0].bet,sorted[0].mkt,settle,sorted[0].tol):1;
+  sorted.forEach((r,i)=>{
+    const m=mult(r.bet,r.mkt,settle,r.tol), g=Math.abs(r.bet-r.mkt)/r.mkt*100;
+    const d=document.createElement("div");
+    d.className="p"+(m>=1?"":" lose")+(i===0&&m>=1?" gold":"")+(r.id===myId?" me":"");
+    d.innerHTML=`<div class="fill" style="width:${Math.min(100,m/Math.max(top,1)*100)}%"></div>
+      <div class="rk">${i+1}</div>
+      <div class="av">${esc(r.name.slice(0,1))}</div>
+      <div class="pi">
+        <div class="pn">${esc(r.name)}${r.id===myId?'<span class="tag">你</span>':''}</div>
+        <div class="pm">${r.day} · 押 ${fmt(r.bet)} · 膽量 ${g.toFixed(1)}% · 容許 ±${r.tol}%</div>
+      </div>
+      <div class="px"><div class="x">${m.toFixed(2)}×</div><div class="d">${drum(m)}</div></div>`;
+    el.appendChild(d);
+  });
+}
+
+/* ===== 下注 ===== */
+function render(){
+  const mkt=PATH[day],tol=tolOf(day),lo=Math.round(mkt*.86),hi=Math.round(mkt*1.14);
+  bet=Math.min(hi,Math.max(lo,bet));
+  $("mkt").textContent=fmt(mkt); $("tol").textContent=tol; $("dleft").textContent=DL[day];
+  $("bet").value=fmt(bet);
+  Object.assign($("slider"),{min:lo,max:hi,step:100,value:bet});
+  $("rlo").textContent=fmt(lo); $("rhi").textContent=fmt(hi);
+  const g=Math.abs(bet-mkt)/mkt*100, k=1+g/10;
+  $("guts").textContent=g.toFixed(2)+"%";
+  $("zero").textContent="誤差 >"+tol+"%";
+  $("kmax").textContent=k.toFixed(2)+"×";
+  $("plates").innerHTML=drum(k);
+  const v=$("verdict");
+  v.textContent=k>=1.5?"WINNER WINNER!":k>=1.15?"CHICKEN DINNER":"只夠回本";
+  v.className="vd"+(k>=1.15?"":" lose");
+  $("m2").textContent=Math.max(0,k*(1-2/tol)).toFixed(2)+"×";
+  $("m5").textContent=Math.max(0,k*(1-5/tol)).toFixed(2)+"×";
+  $("m8").textContent=Math.max(0,k*(1-8/tol)).toFixed(2)+"×";
+  drawCurve(mkt,tol);
+}
+function drawCurve(mkt,tol){
+  const W=390,H=175,L=30,B=26,T=16, lo=mkt*.88,hi=mkt*1.12,N=23,pts=[];
+  for(let i=0;i<N;i++){const s=lo+(hi-lo)*i/(N-1);pts.push([s,mult(bet,mkt,s,tol)]);}
+  const my=Math.max(1.7,...pts.map(p=>p[1]))*1.12;
+  const x=s=>L+(s-lo)/(hi-lo)*(W-L-8), y=v=>H-B-(v/my)*(H-B-T), bw=(W-L-8)/N-2.5;
+  let s=`<line x1="${L}" y1="${y(1)}" x2="${W-8}" y2="${y(1)}" stroke="#FF6B5A" stroke-width="1.2" stroke-dasharray="5 3"/>
+  <text x="${L-4}" y="${y(1)+3.5}" text-anchor="end" font-size="8.5" font-weight="700" fill="#FF6B5A">1.0</text>
+  <line x1="${L}" y1="${H-B}" x2="${W-8}" y2="${H-B}" stroke="#E2EAEE" stroke-width="1.5"/>`;
+  pts.forEach(([sv,v])=>{s+=`<rect x="${x(sv)-bw/2}" y="${y(v)}" width="${bw}" height="${Math.max(0,(H-B)-y(v))}" rx="2" fill="${v>=1?'#00BFC4':'#CBD9E0'}"/>`;});
+  s+=`<line x1="${x(bet)}" y1="${T-8}" x2="${x(bet)}" y2="${H-B}" stroke="#FFB020" stroke-width="2"/>
+  <text x="${x(bet)}" y="${T-11}" text-anchor="middle" font-size="9" font-weight="800" fill="#FFB020">你押這</text>`;
+  [lo,mkt,hi].forEach((v,i)=>{s+=`<text x="${x(v)}" y="${H-B+14}" text-anchor="${i===0?'start':i===2?'end':'middle'}" font-size="8.5" font-weight="600" fill="#3A5872">${fmt(v)}</text>`;});
+  $("chart").innerHTML=s;
+}
+
+/* ===== storage ===== */
+async function save(list){
+  roster=list;
+  try{await window.storage.set(KEY,JSON.stringify(list),true);}
+  catch(e){$("msg").textContent="連線有問題,紀錄可能沒同步。";}
+  renderBoard();
+}
+async function load(){
+  try{const r=await window.storage.get(KEY,true); roster=r?JSON.parse(r.value):[];}
+  catch(e){roster=[];}
+  renderBoard();
+}
+$("submit").onclick=async()=>{
+  const name=$("name").value.trim();
+  if(!name){$("msg").textContent="填個名字再下注。";$("name").focus();return;}
+  if(sent){$("msg").textContent="一人一券,送出不可改。";return;}
+  $("submit").disabled=true;
+  let list=roster;
+  try{const f=await window.storage.get(KEY,true); list=f?JSON.parse(f.value):[];}catch(e){}
+  list.push({id:myId,name,day,mkt:PATH[day],bet,tol:tolOf(day),ts:Date.now()});
+  sent=true;
+  $("msg").textContent=`${name} 押 $${fmt(bet)} 已入場。切到「戰況」看你的排名。`;
+  ["day","bet","slider"].forEach(i=>$(i).disabled=true);
+  document.querySelectorAll(".nudge button").forEach(b=>b.disabled=true);
+  await save(list);
+};
+$("demo").onclick=()=>save(SEED.map(([n,d,b],i)=>({id:"S"+i,name:n,day:d,mkt:PATH[d],bet:b,tol:tolOf(d),ts:i})));
+$("clear").onclick=()=>{if(confirm("清空所有人的下注紀錄?"))save([]);};
+$("settle").oninput=e=>{settle=+e.target.value;renderBoard();};
+$("day").onchange=e=>{day=e.target.value;bet=PATH[day];render();};
+$("slider").oninput=e=>{bet=+e.target.value;render();};
+$("bet").onchange=e=>{const v=+e.target.value.replace(/[^\d]/g,'');if(v)bet=v;render();};
+document.querySelectorAll(".nudge button").forEach(b=>b.onclick=()=>{bet+=+b.dataset.d;render();});
+render(); load();
+</script>
