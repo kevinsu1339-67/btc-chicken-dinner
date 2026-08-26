@@ -84,7 +84,13 @@ function buildBets_(sh) {
   // 自動判斷型別會被轉成 Date,那麼 lib.js 的 Date.parse(r[0]) 收到的
   // 就是 Date 物件而非字串,回傳 NaN,hasRecentNonce 的時間窗會整個失效。
   // nonce 也一樣:像 '1e5' 這種值不設文字會被當成數字 100000。
-  [1, 2, 3, 10, 11].forEach((c) => sh.getRange(1, c, LAST_ROW * 4).setNumberFormat('@'));
+  //
+  // 整欄套用（getMaxRows，而非算好的列數上限）：25 人反覆改注,bets 列數
+  // 會持續成長,超出原本估的上限就會寫到沒設格式的儲存格。
+  // 這只是縱深防禦的一層,不是防公式注入的真正機制——真正擋公式注入的是
+  // src/lib.js 的 validateSubmission（禁止 name／nonce 以 =／+／-／@ 開頭）,
+  // 不能只靠儲存格格式來阻止公式被求值。
+  [1, 2, 3, 10, 11].forEach((c) => sh.getRange(1, c, sh.getMaxRows()).setNumberFormat('@'));
 
   const rows = SAMPLE.map((s) => {
     const dl = daysLeftFrom_(Date.parse(s.ts));
@@ -97,7 +103,9 @@ function buildBets_(sh) {
 
 function buildPlayers_(sh) {
   sh.getRange(1, 1, 1, PLAYER_HEADERS.length).setValues([PLAYER_HEADERS]).setFontWeight('bold');
-  sh.getRange(1, 1, LAST_ROW * 4, PLAYER_HEADERS.length).setNumberFormat('@');
+  // 同 buildBets_：整欄套用純文字格式，且僅為縱深防禦，
+  // 真正擋公式注入的是 src/lib.js 的 validateSubmission。
+  sh.getRange(1, 1, sh.getMaxRows(), PLAYER_HEADERS.length).setNumberFormat('@');
   sh.setFrozenRows(1);
 }
 

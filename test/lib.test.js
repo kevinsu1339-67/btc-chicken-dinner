@@ -132,6 +132,91 @@ test('hasRecentNonce 必須掃描所有列，即使列順序反向', () => {
   assert.strictEqual(lib.hasRecentNonce(reversed, 'n_newer', now), true);
 });
 
+// --- validateSubmission：表單驗證與清理 ---
+test('validateSubmission 正常送出，回傳清理過的值', () => {
+  const r = lib.validateSubmission({ name: '  阿明  ', pin: '1234', bet: '85000', nonce: 'abc-123' });
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.name, '阿明');
+  assert.strictEqual(r.pin, '1234');
+  assert.strictEqual(r.bet, 85000);
+  assert.strictEqual(typeof r.bet, 'number');
+  assert.strictEqual(r.nonce, 'abc-123');
+});
+
+test('validateSubmission 拒絕以 = 開頭的名字（公式注入）', () => {
+  const r = lib.validateSubmission({ name: '=TEXTJOIN(",",1,players!C2:C30)', pin: '1234', bet: 1, nonce: 'n1' });
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.reason, 'bad_name');
+});
+
+test('validateSubmission 拒絕以 +、-、@ 開頭的名字', () => {
+  ['+1', '-1', '@1'].forEach((bad) => {
+    const r = lib.validateSubmission({ name: bad, pin: '1234', bet: 1, nonce: 'n1' });
+    assert.strictEqual(r.ok, false, bad + ' 應該被拒絕');
+    assert.strictEqual(r.reason, 'bad_name');
+  });
+});
+
+test('validateSubmission 名字長度上限 20，剛好 20 可過、21 被拒', () => {
+  const ok = lib.validateSubmission({ name: 'a'.repeat(20), pin: '1234', bet: 1, nonce: 'n1' });
+  assert.strictEqual(ok.ok, true);
+  const bad = lib.validateSubmission({ name: 'a'.repeat(21), pin: '1234', bet: 1, nonce: 'n1' });
+  assert.strictEqual(bad.ok, false);
+  assert.strictEqual(bad.reason, 'bad_name');
+});
+
+test('validateSubmission 拒絕含換行字元的名字', () => {
+  const r = lib.validateSubmission({ name: '阿明\n阿明', pin: '1234', bet: 1, nonce: 'n1' });
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.reason, 'bad_name');
+});
+
+test('validateSubmission 拒絕 3 位數與 5 位數的 PIN', () => {
+  const short = lib.validateSubmission({ name: '阿明', pin: '123', bet: 1, nonce: 'n1' });
+  assert.strictEqual(short.ok, false);
+  assert.strictEqual(short.reason, 'bad_pin');
+  const long = lib.validateSubmission({ name: '阿明', pin: '12345', bet: 1, nonce: 'n1' });
+  assert.strictEqual(long.ok, false);
+  assert.strictEqual(long.reason, 'bad_pin');
+});
+
+test('validateSubmission 拒絕非數字 PIN', () => {
+  const r = lib.validateSubmission({ name: '阿明', pin: 'abcd', bet: 1, nonce: 'n1' });
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.reason, 'bad_pin');
+});
+
+test('validateSubmission 拒絕 0、負數、NaN、Infinity 與 1e9 的 bet', () => {
+  [0, -1, NaN, Infinity, 1e9].forEach((bet) => {
+    const r = lib.validateSubmission({ name: '阿明', pin: '1234', bet, nonce: 'n1' });
+    assert.strictEqual(r.ok, false, 'bet=' + bet + ' 應該被拒絕');
+    assert.strictEqual(r.reason, 'bad_bet');
+  });
+});
+
+test('validateSubmission 拒絕含空白或引號的 nonce', () => {
+  const withSpace = lib.validateSubmission({ name: '阿明', pin: '1234', bet: 1, nonce: 'has space' });
+  assert.strictEqual(withSpace.ok, false);
+  assert.strictEqual(withSpace.reason, 'bad_nonce');
+  const withQuote = lib.validateSubmission({ name: '阿明', pin: '1234', bet: 1, nonce: 'has"quote' });
+  assert.strictEqual(withQuote.ok, false);
+  assert.strictEqual(withQuote.reason, 'bad_nonce');
+});
+
+test('validateSubmission 拒絕超過 64 字元的 nonce', () => {
+  const r = lib.validateSubmission({ name: '阿明', pin: '1234', bet: 1, nonce: 'n'.repeat(65) });
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.reason, 'bad_nonce');
+});
+
+test('validateSubmission 對 null body 回傳失敗而不拋例外', () => {
+  assert.doesNotThrow(() => {
+    const r = lib.validateSubmission(null);
+    assert.strictEqual(r.ok, false);
+    assert.strictEqual(r.reason, 'bad_name');
+  });
+});
+
 // --- 行情 API 回應解析 ---
 test('parseTickerPrice 取出價格並轉成 number（Coinbase Exchange）', () => {
   assert.strictEqual(

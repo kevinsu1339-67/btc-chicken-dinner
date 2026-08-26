@@ -102,12 +102,56 @@ function parseTickerPrice(text) {
   return p;
 }
 
+// 表單驗證與清理。doPost 的第一道防線，尤其是 name／nonce：
+// 兩者都會原封不動寫進 Sheet 儲存格，若允許以 =／+／-／@ 開頭，
+// Google Sheets 會把它當公式求值（例如讀出 players!C 欄的 pin_hash 明碼雜湊），
+// 而 doGet 又會把算出來的值當作 roster 公開回傳，等於把每個人的 PIN 雜湊送給任何人離線破解。
+// 依序檢查，回傳第一個失敗的原因；全部通過才回傳清理過（trim／型別轉換）後的值。
+function validateSubmission(body) {
+  const b = (body && typeof body === 'object') ? body : {};
+
+  const name = String(b.name == null ? '' : b.name).trim();
+  if (!name) {
+    return { ok: false, reason: 'bad_name', message: '請填名字。' };
+  }
+  if (name.length > 20) {
+    return { ok: false, reason: 'bad_name', message: '名字太長了，請控制在 20 個字以內。' };
+  }
+  if (/^[=+\-@]/.test(name)) {
+    return { ok: false, reason: 'bad_name', message: '名字不能以 =、+、-、@ 開頭。' };
+  }
+  // \x00-\x1F 涵蓋 tab／換行等控制字元，\x7F 是 DEL。
+  if (/[\x00-\x1F\x7F]/.test(name)) {
+    return { ok: false, reason: 'bad_name', message: '名字不能包含換行或控制字元。' };
+  }
+
+  const pin = String(b.pin == null ? '' : b.pin).trim();
+  if (!/^\d{4}$/.test(pin)) {
+    return { ok: false, reason: 'bad_pin', message: 'PIN 必須是 4 位數字。' };
+  }
+
+  const bet = Number(b.bet);
+  if (!isFinite(bet) || bet <= 0 || bet >= 1e9) {
+    return { ok: false, reason: 'bad_bet', message: '預測價不正確。' };
+  }
+
+  const nonce = String(b.nonce == null ? '' : b.nonce);
+  if (!nonce) {
+    return { ok: false, reason: 'bad_nonce', message: '缺少 nonce。' };
+  }
+  if (nonce.length > 64 || !/^[A-Za-z0-9_-]+$/.test(nonce)) {
+    return { ok: false, reason: 'bad_nonce', message: 'nonce 格式不正確。' };
+  }
+
+  return { ok: true, name, pin, bet, nonce };
+}
+
 // 檔尾匯出。Apps Script 沒有 module，typeof 檢查讓這段在 GAS 被安靜略過。
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     SETTLE_MS, MS_PER_DAY, BET_COLS,
     normalizeName, daysLeftFrom, tolFor, gutsOf, multOf, isClosed,
     rowToBet, rosterFromRows, nextSeq, hasRecentNonce,
-    parseTickerPrice
+    parseTickerPrice, validateSubmission
   };
 }

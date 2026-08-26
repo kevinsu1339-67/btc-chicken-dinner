@@ -76,6 +76,11 @@ function authenticate_(playerId, name, pin, now) {
   for (let i = 0; i < rows.length; i++) {
     if (rows[i][0] === playerId) {
       if (rows[i][2] === h) return { ok: true };
+      // 公開端點＋4 位數 PIN，暴力猜對就是攻擊本身（猜中即可冒名下注）。
+      // 擁有者選擇「可見度優先於封鎖」：只記錄，不做計數／快取／鎖定，
+      // 因此一次暴力掃描會在執行記錄留下數千筆，這是刻意的取捨。
+      // 絕不記錄猜測的 PIN 本身。
+      console.error('PIN 錯誤嘗試，player_id=' + playerId);
       return {
         ok: false,
         reason: 'wrong_pin',
@@ -128,15 +133,12 @@ function doPost(e) {
       return json_({ ok: false, reason: 'closed', message: '下注已於 9/11 00:00 截止。' });
     }
 
-    const name = String(body.name == null ? '' : body.name).trim();
-    const pin = String(body.pin == null ? '' : body.pin).trim();
-    const bet = Number(body.bet);
-    const nonce = String(body.nonce == null ? '' : body.nonce);
-
-    if (!name) return json_({ ok: false, reason: 'bad_name', message: '請填名字。' });
-    if (!/^\d{4}$/.test(pin)) return json_({ ok: false, reason: 'bad_pin', message: 'PIN 必須是 4 位數字。' });
-    if (!isFinite(bet) || bet <= 0) return json_({ ok: false, reason: 'bad_bet', message: '預測價不正確。' });
-    if (!nonce) return json_({ ok: false, reason: 'bad_nonce', message: '缺少 nonce。' });
+    // 驗證與清理一律交給 validateSubmission（lib.js），避免公式注入：
+    // name／nonce 會原封不動寫進 Sheet 儲存格，若允許 =／+／-／@ 開頭，
+    // Sheets 會把它當公式求值，doGet 又會把算出來的值當作 roster 公開回傳。
+    const v = validateSubmission(body);
+    if (!v.ok) return json_(v);
+    const { name, pin, bet, nonce } = v;
 
     const playerId = normalizeName(name);
     const rows = betRows_();
@@ -170,6 +172,11 @@ function doPost(e) {
     console.error('doPost 拋出例外', err);
     return json_({ ok: false, reason: 'server_error', message: '伺服器暫時無法使用，請稍後再試' });
   } finally {
+    // appendRow 對 Sheets 而言是緩衝寫入，不保證在這裡已真正落地。
+    // 若不 flush 就先放鎖，下一個請求可能搶到鎖後讀到還沒寫入的 bets 範圍，
+    // 用同一個 seq 算出重複值——lib.js 的 rosterFromRows 對 seq 沒有平手規則，
+    // 會直接吃掉其中一筆，注就這樣不見了。
+    SpreadsheetApp.flush();
     lock.releaseLock();
   }
 }
