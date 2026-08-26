@@ -420,108 +420,102 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ### Task 3: 建立 Google Sheet 與 current 公式
 
-這個任務沒有自動化測試，交付物是一份可驗證的 Sheet 與一份步驟文件。必須排在 Apps Script 之前，因為後面的任務要有真的 Sheet 才能部署測試。
+**由專案負責人本人執行**——subagent 沒有 Google 帳號，做不到這一步。
+
+原本這個任務是一連串手動點選。改為一支可重複執行的 bootstrap 腳本：欄序與公式
+不可能打錯，腳本進版控，日後要重建或開第二場再跑一次就好。
 
 **Files:**
+- Create: `tools/bootstrap-sheet.gs`
 - Create: `docs/sheet-setup.md`
 
 **Interfaces:**
 - Consumes: Task 2 的 `BET_COLS` 欄序
-- Produces: 一份 Google Sheet，其 ID 供 Task 4 的 `SHEET_ID` 使用；三個分頁 `bets` / `players` / `current`
+- Produces: 一份含 `bets` / `players` / `current` 三個分頁的 Google Sheet；
+  其 Sheet ID 供 Task 4 的 `SHEET_ID` 使用
 
-- [ ] **Step 1: 建立試算表與三個分頁**
+- [ ] **Step 1: 跑 bootstrap 腳本**
 
-新建一份 Google 試算表，命名為「比特幣預測賽 2026」。建立三個分頁，名稱必須完全相符（Apps Script 用名字尋找）：`bets`、`players`、`current`。刪掉預設的「工作表1」。
+1. 新建一份空白 Google 試算表，命名為「比特幣預測賽 2026」
+2. 選「擴充功能 → Apps Script」
+3. 把 `tools/bootstrap-sheet.gs` 整個貼進 `Code.gs`，取代全部原有內容
+4. 上方函式選單選 `setupSheet`，按「執行」。首次執行會跳出授權視窗，允許存取試算表
+5. 打開「執行記錄」
 
-`bets` 第 1 列填入表頭，欄序不可更動：
+腳本會建好三個分頁、寫入表頭、灌入驗證用假資料、把九條公式填到第 55 列，
+然後印出 Sheet ID 與一份逐項驗證報告。
 
-```
-ts | player_id | name | seq | days_left | tol | mkt | bet | guts | src | nonce
-```
+- [ ] **Step 2: 讀執行記錄的驗證結果**
 
-`players` 第 1 列：
+每一行以 `✓` 或 `✗` 開頭，格式為「實際值 / 預期值」。預期值不是手寫的常數，
+而是腳本用與 `src/lib.js` 相同的公式在 JS 端獨立算出來的——兩邊同時錯成同一個
+數字的機率極低，所以這是有意義的交叉驗證，不是自我背書。
 
-```
-player_id | name | pin_hash | first_ts
-```
+應該看到 12 行 `✓`（阿明與小美各六項）與結尾的「全部驗證通過」。
 
-- [ ] **Step 2: 灌入驗證用假資料**
+`✗` 最可能的原因：
 
-在 `bets` 的第 2 到第 4 列貼上（用來驗證 `current` 公式，Task 10 驗收前會清掉）：
+| 症狀 | 原因 |
+|---|---|
+| 最新預測是 85000 而非 82000 | `XLOOKUP` 的 `search_mode` 參數沒吃到 `-1` |
+| 改注次數多 1 | `COUNTIF` 忘了減 1 |
+| 膽量或倍數整欄空白 | 這份試算表的地區設定讓公式分隔符變成分號 |
 
-```
-2026-08-26T14:03:11+08:00	阿明	阿明	1	16	24	78412	85000	8.4021	live	n1
-2026-08-27T10:00:00+08:00	小美	小美	1	15	23	79200	78000	1.5152	live	n2
-2026-09-02T21:47:05+08:00	阿明	阿明	2	9	18	79615	82000	2.9856	live	n3
-```
+出現任何 `✗` 就把整份執行記錄貼出來，不要自行修改公式。
 
-- [ ] **Step 3: 建立 current 分頁的公式**
+- [ ] **Step 3: 記下 Sheet ID 並寫成文件**
 
-`current` 分頁：
+從執行記錄取出 Sheet ID（也可從網址列 `/spreadsheets/d/` 與 `/edit` 之間取得）。
 
-- `A1` 填文字 `結算價（9/11 開盤）`，`B1` 先填 `82400` 當測試值
-- 第 3 列填表頭：`player_id`、`名字`、`最新預測`、`最後下注時間`、`容許值`、`膽量`、`誤差`、`倍數`、`改注次數`、`首注時間`
-- `A4` 填入：
-
-```
-=SORT(UNIQUE(FILTER(bets!B2:B, bets!B2:B<>"")))
-```
-
-- `B4` 到 `J4` 分別填入下列公式，然後選取 `B4:J4` 往下拖到第 55 列（可容納 50 人，遠超過預期的約 25 人）：
-
-```
-B4  =IF($A4="","",XLOOKUP($A4, bets!$B$2:$B, bets!$C$2:$C, , 0, -1))
-C4  =IF($A4="","",XLOOKUP($A4, bets!$B$2:$B, bets!$H$2:$H, , 0, -1))
-D4  =IF($A4="","",XLOOKUP($A4, bets!$B$2:$B, bets!$A$2:$A, , 0, -1))
-E4  =IF($A4="","",XLOOKUP($A4, bets!$B$2:$B, bets!$F$2:$F, , 0, -1))
-F4  =IF($A4="","",XLOOKUP($A4, bets!$B$2:$B, bets!$I$2:$I, , 0, -1))
-G4  =IF($A4="","",ABS($C4-$B$1)/$B$1*100)
-H4  =IF($A4="","",MAX(0,(1+$F4/10)*(1-$G4/$E4)))
-I4  =IF($A4="","",COUNTIF(bets!$B$2:$B, $A4)-1)
-J4  =IF($A4="","",MINIFS(bets!$A$2:$A, bets!$B$2:$B, $A4))
-```
-
-`XLOOKUP` 的第六個參數 `-1` 代表由最後一列往回搜尋，因此天然取到最新一筆，不必寫 QUERY 也不必先排序。
-
-- [ ] **Step 4: 手動驗證公式**
-
-檢查 `current` 應顯示兩列（阿明、小美），並核對阿明那一列：
-
-| 欄 | 應為 | 為什麼 |
-|---|---|---|
-| 最新預測 | `82000` | 取 seq=2 那筆，不是 85000 |
-| 容許值 | `18` | 跟著最新一筆，不是 24 |
-| 誤差 | `0.4854` | `abs(82000−82400)/82400×100` |
-| 倍數 | `1.2944` | `(1+2.9856/10)×(1−0.4854/18)` |
-| 改注次數 | `1` | 送出兩次＝改過一次 |
-| 首注時間 | `2026-08-26T14:03:11+08:00` | 首注不隨改注移動 |
-
-小美那列的改注次數應為 `0`。
-
-若「最新預測」顯示 85000，代表 `XLOOKUP` 的 `-1` 參數漏了；若「改注次數」顯示 2，代表忘了減 1。
-
-- [ ] **Step 5: 記錄 Sheet ID 並寫成文件**
-
-從網址列取出 Sheet ID（`https://docs.google.com/spreadsheets/d/` 與 `/edit` 之間那一長串）。
-
-建立 `docs/sheet-setup.md`，內容為上述 Step 1 至 Step 4 的完整步驟，並在檔頭留一行：
+建立 `docs/sheet-setup.md`：
 
 ```markdown
+# Sheet 建置
+
 Sheet ID: `<貼上你的 Sheet ID>`
+
+## 建立方式
+
+新建空白試算表 → 擴充功能 → Apps Script → 貼上 `tools/bootstrap-sheet.gs`
+→ 執行 `setupSheet` → 讀執行記錄。
+
+腳本可重複執行：它會清空並重建三個分頁，不會累積髒資料。
+
+## 三個分頁
+
+- `bets` — append-only 流水帳。欄序見 `src/lib.js` 的 `BET_COLS`，不可更動。
+  `ts` / `player_id` / `name` / `src` / `nonce` 五欄強制為純文字格式。
+- `players` — 身分表，PIN 只存 SHA-256 雜湊。
+- `current` — 純公式頁。`B1` 填 9/11 開盤價，其餘自動。
+
+## 兩個容易踩的地雷
+
+`ts` 欄必須是純文字。若讓 Sheets 自動判斷型別，ISO 8601 字串會被轉成 Date，
+`src/lib.js` 的 `Date.parse(r[0])` 收到 Date 物件會回 `NaN`，
+`hasRecentNonce` 的時間窗就整個失效。腳本已用 `setNumberFormat('@')` 鎖死。
+
+首注時間用 `XLOOKUP(..., search_mode=1)` 而非 `MINIFS`。
+`MINIFS` 只對數值有效，套在純文字的 `ts` 欄上會回 0。
 ```
 
-這份文件的用途是：Sheet 不在版控裡，若哪天要重建或換一份，照著這份就能複製出一模一樣的結構。
-
-- [ ] **Step 6: 提交**
+- [ ] **Step 4: 提交**
 
 ```bash
-git add docs/sheet-setup.md
-git commit -m "新增 Google Sheet 結構與 current 公式的建置文件
+git add tools/bootstrap-sheet.gs docs/sheet-setup.md
+git commit -m "新增 Sheet 一鍵建置腳本
 
-bets 為 append-only 流水帳，current 用 XLOOKUP 的反向搜尋模式
-天然取到每人最新一筆，不必寫 QUERY 也不必先排序。
+原本的手動點選步驟改為可重複執行的腳本:欄序與公式不可能打錯,
+腳本進版控,日後重建或開第二場再跑一次即可。
 
-Sheet 本身不在版控內，這份文件是重建的依據。
+假資料只給事實欄位,guts / days_left / tol 一律由腳本算出來,
+避免手寫的衍生值與事實欄位對不起來——原本手寫的 guts 就是錯的。
+
+ts 等五欄用 setNumberFormat('@') 鎖成純文字。若讓 Sheets 自動判斷型別,
+ISO 8601 字串會被轉成 Date,lib.js 的 Date.parse 會回 NaN,
+hasRecentNonce 的時間窗會整個失效。
+
+首注時間改用 XLOOKUP 的正向搜尋而非 MINIFS——MINIFS 只對數值有效,
+套在純文字的 ts 欄上會回 0。
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
