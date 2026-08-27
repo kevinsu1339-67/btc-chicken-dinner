@@ -6,7 +6,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* ---- 新視覺調色盤(取自賭城風參考設計) ---- */
   --bg-void:#0d0a08;
   --bg-panel:#181009;
   --bg-card:#221609;
@@ -22,43 +21,41 @@
   --font-display:'Alfa Slab One',cursive;
   --font-body:'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif;
   --font-mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;
-  --r:16px;
-
-  /* ---- 相容別名:下面 <script> 裡有幾處用 style.color = 'var(--aqua-d)' 等
-     方式直接操作 DOM(連線狀態、送出成功/失敗訊息、主辦盈虧正負號)。
-     那段 JS 邏輯不能動,所以這三個舊名稱留著、只換算成新色票,
-     這樣 JS 寫入的顏色會自動變成新設計的金色/紅色,不用改 JS 本身。 ---- */
-  --aqua-d:var(--gold);
-  --coral:var(--neon-red);
-  --navy-2:var(--cream-dim);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{background:var(--bg-void)}
+html,body{background:var(--bg-void)}
 body{
+  color:var(--cream);font-family:var(--font-body);-webkit-font-smoothing:antialiased;
+  display:flex;justify-content:center;min-height:100vh;
   background:radial-gradient(ellipse at top,#241407 0%,var(--bg-void) 60%);
-  color:var(--cream);
-  font-family:var(--font-body);
-  padding-bottom:calc(76px + env(safe-area-inset-bottom));
-  -webkit-font-smoothing:antialiased;
-  display:flex;justify-content:center;
-  min-height:100vh;
 }
-.app{
-  max-width:430px;width:100%;margin:0 auto;min-height:100vh;position:relative;
+a{color:inherit}
+button{font-family:var(--font-body);cursor:pointer}
+::-webkit-scrollbar{width:0;height:0}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.hidden{display:none !important}
+
+#app{
+  width:100%;max-width:430px;min-height:100vh;position:relative;
   background:
     linear-gradient(rgba(13,10,8,.78),rgba(13,10,8,.94)),
     url('assets/background.jpg') top center/cover no-repeat fixed;
   border-left:1px solid var(--wood-line);border-right:1px solid var(--wood-line);
+  padding-bottom:calc(76px + env(safe-area-inset-bottom));
 }
-:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
-/* ---------- top / hero ---------- */
-.top{
-  padding:calc(16px + env(safe-area-inset-top)) 18px 20px;
-  position:relative;overflow:hidden;
-  border-bottom:2px solid var(--gold-dim);
+/* ---------- topbar ---------- */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px;position:sticky;top:0;z-index:20;
+  background:linear-gradient(#0d0a08 80%,transparent);
+}
+.topbar .brand{font-family:var(--font-mono);font-weight:700;letter-spacing:.08em;font-size:12px;color:var(--gold-dim)}
+
+/* ---------- hero ---------- */
+.hero{margin:4px 14px 18px;padding:18px 14px 16px;border-radius:18px;
   background:radial-gradient(circle at 30% 0%,#3a2410 0%,var(--bg-panel) 65%);
-  box-shadow:var(--shadow);
+  border:2px solid var(--gold-dim);position:relative;overflow:hidden;box-shadow:var(--shadow);
 }
 .marquee{
   position:absolute;inset:6px;border-radius:12px;pointer-events:none;
@@ -72,150 +69,70 @@ body{
     linear-gradient(#000,#000) bottom/100% 3px no-repeat,
     linear-gradient(#000,#000) left/3px 100% no-repeat,
     linear-gradient(#000,#000) right/3px 100% no-repeat;
-  animation:chase 1.1s linear infinite;opacity:.8;
+  animation:chase 1.1s linear infinite;opacity:.85;
 }
 @keyframes chase{ to{ background-position:14px 0; } }
 @media (prefers-reduced-motion: reduce){ .marquee{animation:none} }
-.logo{display:block;width:min(220px,62%);margin:0 auto 6px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55))}
-.logo-fallback{display:none;text-align:center}
-.logo-fallback .eb{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;font-weight:700;color:var(--gold-dim)}
-.top h1{
-  font-family:var(--font-display);font-weight:400;font-size:21px;line-height:1.3;
-  text-align:center;margin-top:2px;color:var(--gold);letter-spacing:.01em;
-  text-shadow:0 2px 0 #7a4e04,0 4px 10px rgba(0,0,0,.6);
-  position:relative;
+.hero-img{width:100%;max-width:320px;display:block;margin:0 auto 10px;border-radius:12px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55))}
+.hero-emoji{font-size:44px;text-align:center;line-height:1;margin-bottom:4px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+#hero-fallback h1{
+  font-family:var(--font-display);font-weight:400;font-size:22px;line-height:1.2;text-align:center;
+  color:var(--gold);letter-spacing:.01em;text-shadow:0 2px 0 #7a4e04,0 4px 10px rgba(0,0,0,.6);
 }
-.top h1 span{
-  display:block;font-family:var(--font-body);font-size:12px;font-weight:500;
-  color:var(--cream-dim);margin-top:6px;letter-spacing:.02em;text-shadow:none;
-}
-.pot{display:flex;gap:10px;margin-top:16px;position:relative}
-/* 只選直接子元素。用 .pot div 會連 .k / .v / .cap 都套上外框,變成盒中盒。 */
-.pot > div{flex:1;background:var(--bg-card);border:1px solid var(--wood-line);border-radius:12px;padding:11px 10px;text-align:center}
-.pot .k{font-size:9.5px;color:var(--cream-dim);font-weight:600;letter-spacing:.06em}
-.pot .v{font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--gold);margin-top:2px;font-variant-numeric:tabular-nums}
-.pot .v small{font-size:10px;font-weight:600;color:var(--cream-dim)}
-.pot .price-now .v{font-size:34px;letter-spacing:-.01em;margin-top:4px}
-.pot .price-now .cap{font-size:9.5px;color:var(--cream-dim);font-weight:600;margin-top:4px}
-/* 行情抓不到時顯示的是最後一次成功的價格,必須看得出來是舊的 */
-.pot .price-now .cap.stale{color:var(--neon-red)}
+.btc-ticker{display:flex;align-items:baseline;justify-content:center;gap:8px;font-family:var(--font-mono)}
+.btc-ticker .sym{font-size:12px;color:var(--cream-dim)}
+.btc-ticker .price{font-size:24px;font-weight:700;color:var(--neon-green)}
+.btc-ticker.stale .price{color:var(--cream-dim)}
+.btc-note{text-align:center;font-size:11px;color:var(--cream-dim);margin-top:4px}
 
-/* ---------- shell ---------- */
-.pane{padding:14px 14px 0}
-.pane[hidden]{display:none}
-.card{background:var(--bg-card);border:1px solid var(--wood-line);border-radius:var(--r);padding:15px 15px 16px;
-  margin-bottom:12px;box-shadow:var(--shadow)}
-h2{font-family:var(--font-display);font-weight:400;font-size:15px;color:var(--gold);letter-spacing:.01em}
-.sub{font-size:11.5px;color:var(--cream-dim);margin-top:5px;line-height:1.7}
-.lbl{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--cream-dim);text-transform:uppercase;
-  display:block;margin-bottom:5px}
-.num{font-family:var(--font-mono);font-size:19px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
-.num small{font-size:11px;font-weight:600;color:var(--cream-dim)}
-svg{display:block;width:100%;height:auto}
-#board text,#chart text{font-family:'JetBrains Mono','Noto Sans TC',sans-serif}
+/* ---------- generic section / card ---------- */
+.section{margin:0 14px 16px}
+.section-title{font-size:15px;font-weight:400;font-family:var(--font-display);letter-spacing:.01em;color:var(--gold);margin:0 0 10px}
+.card{background:var(--bg-card);border:1px solid var(--wood-line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+.empty-note{font-size:12.5px;color:var(--cream-dim);text-align:center;padding:14px 4px}
 
-/* ---------- scenario ---------- */
-.scn{display:flex;align-items:baseline;justify-content:space-between}
-.scn .big{font-family:var(--font-mono);font-size:26px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;margin:14px 0 2px;accent-color:var(--gold)}
+.summary-bar{display:flex;gap:8px;margin:0 14px 14px}
+.summary-bar .stat{flex:1;background:var(--bg-card);border:1px solid var(--wood-line);border-radius:12px;padding:10px 8px;text-align:center}
+.summary-bar .stat .v{font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--gold)}
+.summary-bar .stat .l{font-size:10px;color:var(--cream-dim);margin-top:2px}
+.summary-bar .stat.pl-pos .v{color:var(--neon-green)}
+.summary-bar .stat.pl-neg .v{color:var(--neon-red)}
+
+canvas{width:100%;display:block}
+
+/* ---------- 假設結算價滑桿 ---------- */
+.slider-row .lbl-row{display:flex;justify-content:space-between;font-size:12px;color:var(--cream-dim);margin-bottom:4px}
+.slider-row .lbl-row b{color:var(--gold);font-family:var(--font-mono)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;margin:10px 0 2px;accent-color:var(--gold)}
 input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:3px;background:var(--wood-line)}
 input[type=range]::-moz-range-track{height:5px;border-radius:3px;background:var(--wood-line)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
   background:var(--gold);border:3px solid var(--bg-card-hi);margin-top:-10.5px;box-shadow:0 2px 7px rgba(242,183,5,.45)}
 input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--gold);
   border:3px solid var(--bg-card-hi);box-shadow:0 2px 7px rgba(242,183,5,.45)}
-.ends{display:flex;justify-content:space-between;font-size:10px;color:var(--cream-dim);
-  font-weight:600;font-variant-numeric:tabular-nums}
+.ends{display:flex;justify-content:space-between;font-size:10px;color:var(--cream-dim);font-weight:600;font-variant-numeric:tabular-nums;margin-top:4px}
 
-/* ---------- player rows ---------- */
-.plist{display:flex;flex-direction:column;gap:8px}
-.p{
-  display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:12px;
-  background:var(--bg-card-hi);border:1px solid var(--wood-line);position:relative;overflow:hidden;
-}
-.p .fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(242,183,5,.16),transparent);border-radius:12px}
-.p.lose .fill{background:linear-gradient(90deg,rgba(255,59,92,.14),transparent)}
-.p > *{position:relative}
-.p .rk{font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--gold-dim);width:16px;flex:none;text-align:center}
-.p.gold .rk{color:var(--gold)}
-.av{
-  width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;
-  background:var(--gold);color:#221609;font-size:13px;font-weight:700;
-}
-.p.lose .av{background:var(--wood-line);color:var(--cream-dim)}
-.p.me .av{background:var(--gold);color:#221609;box-shadow:0 0 0 2px var(--bg-card-hi),0 0 0 3.5px var(--gold)}
-.pi{flex:1;min-width:0}
-.pn{font-size:13.5px;font-weight:700;color:var(--cream);display:flex;align-items:center;gap:5px}
-.tag{font-size:9px;font-weight:700;background:var(--gold);color:#221609;padding:1px 6px;border-radius:6px}
-.pm{font-size:10.5px;color:var(--cream-dim);margin-top:2px;font-variant-numeric:tabular-nums}
-.px{text-align:right;flex:none}
-.px .x{font-family:var(--font-mono);font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--neon-green)}
-.p.lose .px .x{color:var(--neon-red)}
-.px .d{font-size:12px;line-height:1.2;margin-top:1px}
-.empty{text-align:center;color:var(--cream-dim);font-size:12.5px;padding:26px 0;line-height:1.9}
-
-/* ---------- bet ---------- */
-.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
-select{
-  width:100%;font-family:var(--font-body);font-size:15px;font-weight:700;color:var(--cream);
-  background:var(--bg-card-hi);border:1px solid var(--wood-line);border-radius:10px;padding:10px 9px;
-}
-.betin{
-  width:100%;font-family:var(--font-mono);font-size:38px;font-weight:700;color:var(--gold);
-  text-align:center;border:none;background:transparent;font-variant-numeric:tabular-nums;
-  letter-spacing:-.02em;
-}
-.betin:focus{outline:none}
-.nudge{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:14px}
-.nudge button{
-  font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--cream-dim);
-  background:var(--bg-card-hi);border:1px solid var(--wood-line);border-radius:9px;padding:10px 2px;
-  cursor:pointer;min-height:40px;
-}
-.nudge button:active{background:var(--wood-line);border-color:var(--gold)}
-.meter{
-  background:linear-gradient(160deg,#170e06,#0f0906);color:var(--cream);border:1px solid var(--wood-line);
-  border-radius:var(--r);padding:18px 16px;text-align:center;margin-top:14px;
-}
-.meter .vd{font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:.04em;color:#ffe27a}
-.meter .vd.lose{color:var(--neon-red)}
-.meter .dr{font-size:27px;margin:8px 0 2px;letter-spacing:2px}
-.meter .kx{font-family:var(--font-mono);font-size:31px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
-.meter .cap{font-size:10.5px;color:var(--cream-dim);margin-top:3px}
-.risks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;
-  border-top:1px dashed var(--wood-line);padding-top:12px}
-.risks div{font-size:9.5px;color:var(--cream-dim);font-weight:600}
-.risks b{display:block;font-family:var(--font-mono);font-size:15px;color:var(--cream);margin-top:3px;font-variant-numeric:tabular-nums}
-.act{display:flex;gap:9px;margin-top:13px}
-/* 名字下拉與 PIN 欄位共用同一組尺寸,兩者 flex:1 1 0 因而等寬。
-   全域的 select 規則字級與內距都跟 input 不同,不覆寫的話同一列會高矮不一。 */
-.act input,.act select{
-  flex:1 1 0;min-width:0;
-  font-family:var(--font-body);font-size:15px;font-weight:600;padding:12px;
-  border:1px solid var(--wood-line);border-radius:11px;background:var(--bg-card-hi);color:var(--cream);
-}
-.act input::placeholder{color:var(--cream-dim)}
-.go{
-  font-family:var(--font-body);font-size:15px;font-weight:700;letter-spacing:.04em;
-  background:var(--gold);color:#221609;border:none;padding:12px 26px;border-radius:11px;cursor:pointer;
-  box-shadow:0 4px 14px rgba(242,183,5,.35);min-height:44px;transition:transform .08s ease,box-shadow .08s ease;
-}
-.go:active{transform:scale(.97);box-shadow:0 2px 6px rgba(242,183,5,.25)}
-.go:disabled{background:var(--wood-line);color:var(--cream-dim);box-shadow:none;transform:none}
-.msg{font-size:11.5px;color:var(--gold);font-weight:600;margin-top:9px;min-height:16px;line-height:1.6}
-.ghost{
-  font-family:var(--font-body);font-size:11.5px;font-weight:700;background:transparent;
-  border:1px solid var(--wood-line);color:var(--cream-dim);padding:9px 13px;border-radius:9px;
-  cursor:pointer;margin-top:11px;margin-right:7px;min-height:38px;
-}
-.ghost:active{border-color:var(--gold);color:var(--gold)}
-.foot{text-align:center;font-size:9.5px;color:var(--cream-dim);line-height:2;padding:6px 20px 18px}
+/* ---------- 排行榜 ---------- */
+.rule-text{font-size:12.5px;line-height:1.7;color:var(--cream-dim)}
+.lb-card{position:relative;overflow:hidden;background:var(--bg-card);border:1px solid var(--wood-line);
+  border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.lb-bar{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(242,183,5,.18),transparent)}
+.lb-rank{font-family:var(--font-mono);font-weight:700;color:var(--gold-dim);width:20px;text-align:center;font-size:13px;z-index:1}
+.lb-avatar{width:34px;height:34px;border-radius:50%;background:var(--wood-line);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--gold);z-index:1;flex-shrink:0}
+.lb-mid{flex:1;min-width:0;z-index:1}
+.lb-name{font-weight:700;font-size:14px}
+.lb-sub{font-size:11px;color:var(--cream-dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-right{text-align:right;z-index:1}
+.lb-mult{font-family:var(--font-mono);font-weight:700;font-size:18px}
+.lb-mult.win{color:var(--neon-green);text-shadow:0 0 10px rgba(61,255,160,.5)}
+.lb-mult.lose{color:var(--neon-red);text-shadow:0 0 10px rgba(255,59,92,.4)}
+.lb-chicken{font-size:11px;letter-spacing:-1px}
 
 /* ---------- 遊戲規則 ---------- */
 .rule-flow{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:12px}
 .rule-chip{flex:1;background:var(--bg-card-hi);border:1px solid var(--wood-line);border-radius:10px;padding:8px 4px;text-align:center}
 .rule-chip .ico{font-size:20px}
-.rule-chip .lbl{margin-top:2px;margin-bottom:0}
+.rule-chip .lbl{font-size:11px;color:var(--cream-dim);margin-top:2px}
 .rule-arrow{color:var(--gold-dim);font-size:16px;font-weight:700}
 .rule-item{margin-bottom:10px}
 .rule-desc{font-size:12.5px;font-weight:700;color:var(--gold);line-height:1.6}
@@ -225,70 +142,217 @@ select{
 .rule-notes b{color:var(--cream)}
 
 /* ---------- bottom nav ---------- */
-nav{
-  position:fixed;left:0;right:0;bottom:0;z-index:20;
-  background:var(--bg-panel);border-top:1px solid var(--wood-line);display:flex;
+.tabbar{
+  position:fixed;left:50%;bottom:0;transform:translateX(-50%);
+  width:100%;max-width:430px;display:flex;z-index:30;
+  background:var(--bg-panel);border-top:1px solid var(--wood-line);
   padding-bottom:env(safe-area-inset-bottom);
 }
-nav .in{max-width:430px;margin:0 auto;display:flex;width:100%}
-nav button{
-  flex:1;background:none;border:none;padding:9px 0 10px;cursor:pointer;
-  font-family:var(--font-body);font-size:11px;font-weight:700;color:var(--cream-dim);
-  display:flex;flex-direction:column;align-items:center;gap:3px;min-height:44px;
+.tabbar button{
+  flex:1;background:none;border:none;color:var(--cream-dim);
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:10px 0 12px;font-size:11px;font-weight:700;min-height:44px;
 }
-nav button[aria-selected=true]{color:var(--gold)}
-nav .ic{
-  width:26px;height:26px;border-radius:9px;display:grid;place-items:center;font-size:14px;
-  background:transparent;transition:background .15s;
-}
-nav button[aria-selected=true] .ic{background:rgba(242,183,5,.18)}
+.tabbar button .ico{font-size:19px}
+.tabbar button.active{color:var(--gold)}
 </style>
 
-<div class="app">
-  <div class="top">
+<div id="app"></div>
+
+<script src="src/lib.js"></script>
+<script src="src/api.js"></script>
+<script>
+'use strict';
+
+/* =========================================================================
+   WINNER WINNER CHICKEN DINNER — 戰況頁（Task A）
+   資料來源改為 Google Sheet：src/api.js 打 doGet/doPost，計分公式一律呼叫
+   src/lib.js 的 multOf / gutsOf，不重寫公式。下注頁在 Task B 才會實作，
+   這裡先留一個「整理中」的占位內容，分頁按鈕保留讓版面完整。
+   ========================================================================= */
+
+const API_URL = 'https://script.google.com/macros/s/AKfycbz96sNqUTzyxmVymm9G1R0TYAcYjYX2Vb5wxM-ZswwGAez3SVYdXQvs8i695XrRYODw/exec';
+const api = ChickenApi.createApi({ url: API_URL });
+
+// 圖表時間軸固定範圍（開賽日 → 結算時刻），不隨資料量或滑桿變動而跳動。
+const T0 = Date.parse('2026-08-26T00:00:00+08:00');
+const T1 = SETTLE_MS; // 來自 src/lib.js
+// 戰況頁「假設結算價」滑桿的固定範圍。用固定值而非隨市價浮動,讓拖曳的
+// 尺度不會每次重新整理都變——沿用目前 index.html 已驗證過的做法。
+const SLIDER_LO = 30000, SLIDER_HI = 120000;
+
+const $ = id => document.getElementById(id);
+const fmtMoney = n => Math.round(n).toLocaleString('en-US');
+const fmtMD = ms => { const d = new Date(ms); return (d.getMonth() + 1) + '/' + String(d.getDate()).padStart(2, '0'); };
+const esc = s => String(s).replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+
+let S = { mkt: 0, tol: 0, daysLeft: 0, closed: false, roster: [], serverTime: '', src: '' };
+let klines = [];       // 走勢線資料，來自 loadKlines()（Coinbase）
+let pollTimer = null;
+
+const state = {
+  tab: 'home',
+  bets: [],            // 由 betsFromRoster(S.roster) 填入，見 refresh()
+  assumedSettle: null, // 戰況頁「假設結算價」滑桿目前值
+  connMsg: '連線中…',
+  connBad: false,
+};
+
+/* ---------------------------------------------------------------------
+   資料層適配器：把 doGet 回傳的 roster 換成戰況頁要的 bet 紀錄格式。
+   roster 每筆已經是「這個人最新一筆」（src/lib.js 的 rosterFromRows 只留
+   seq 最大的那筆），欄位對應見遷移計畫文件。
+   --------------------------------------------------------------------- */
+function betsFromRoster(roster) {
+  return roster.map(r => {
+    const ts = Date.parse(r.ts);
+    return {
+      name: r.name,
+      predict: r.bet,
+      marketAtBet: r.mkt,
+      dateStr: isNaN(ts) ? '—' : fmtMD(ts),  // 僅供顯示
+      ts,
+      allowance: r.tol
+    };
+  });
+}
+
+/* 結算價：截止前用戰況頁的假設滑桿,尚未同步過伺服器時退回 0（畫面顯示同步中）。 */
+function currentSettlePrice() {
+  return state.assumedSettle != null ? state.assumedSettle : (S.mkt || 0);
+}
+
+/* 幫每筆下注即時算出膽量與倍數（用目前假設的結算價）。
+   ⚠️ allowance 一律直接用記錄裡的 b.allowance（來源是伺服器的 roster[].tol），
+   絕對不可以用 dateStr 反推查表。下注日是伺服器蓋的時間戳，前端如果用本地
+   日期反推天數再查容許值表，會在時區與跨午夜的邊界跟伺服器算的對不上——
+   例如玩家在 9/09 23:59（UTC+8）下注，前端若因時區把日期算成 9/10，就會
+   少算一級容許值，戰況頁排行榜顯示的倍數就會跟 Sheet 實際記錄、以及最終
+   結算算出來的結果不一致。不要「簡化」成用 dateStr 查表。 */
+function computeAllResults(settlePrice) {
+  return state.bets.map(b => {
+    const allowance = b.allowance;
+    const courage = gutsOf(b.predict, b.marketAtBet);
+    const multiplier = multOf(b.predict, b.marketAtBet, settlePrice, allowance);
+    return { ...b, allowance, courage, multiplier };
+  }).sort((a, b) => b.multiplier - a.multiplier);
+}
+
+/* =========================================================================
+   畫面渲染
+   ========================================================================= */
+const app = $('app');
+
+function render() {
+  app.innerHTML = `
+    ${renderTopbar()}
+    ${state.tab === 'home' ? renderHomeContent() : renderBetContent()}
+    ${renderTabbar()}
+  `;
+  bindGlobalEvents();
+  if (state.tab === 'home') afterHomeRender();
+}
+
+function renderTopbar() {
+  return `<div class="topbar"><div class="brand">🍗 WWCD · BTC 預測賽</div></div>`;
+}
+
+function renderTabbar() {
+  return `
+  <div class="tabbar">
+    <button data-tab="home" class="${state.tab === 'home' ? 'active' : ''}"><span class="ico">📊</span>戰況</button>
+    <button data-tab="bet" class="${state.tab === 'bet' ? 'active' : ''}"><span class="ico">🍗</span>下注</button>
+  </div>`;
+}
+
+/* ---------------- 戰況 ---------------- */
+function summaryBarHtml(betCount, winCount, hostPL) {
+  return `
+    <div class="stat" style="background-color:#00000080"><div class="v">${betCount}</div><div class="l">餐點池(人份)</div></div>
+    <div class="stat" style="background-color:#00000080"><div class="v">${winCount}</div><div class="l">1.0× 以上</div></div>
+    <div class="stat ${hostPL >= 0 ? 'pl-pos' : 'pl-neg'}" style="background-color:#00000080"><div class="v">${hostPL >= 0 ? '+' : ''}${hostPL.toFixed(2)}</div><div class="l">主辦盈虧</div></div>
+  `;
+}
+
+function leaderboardHtml(results) {
+  if (!results.length) {
+    return `<div class="card"><div class="empty-note">目前還沒有人下注,快去「下注」分頁卡位</div></div>`;
+  }
+  return results.map((r, i) => {
+    const chickens = '🍗'.repeat(Math.floor(r.multiplier)) + (r.multiplier % 1 >= 0.5 ? '🍗' : '');
+    const barW = Math.min(100, r.multiplier / (results[0].multiplier || 1) * 100);
+    return `
+    <div class="lb-card">
+      <div class="lb-bar" style="width:${barW}%"></div>
+      <div class="lb-rank">${i + 1}</div>
+      <div class="lb-avatar">${esc(r.name.slice(0, 1))}</div>
+      <div class="lb-mid">
+        <div class="lb-name">${esc(r.name)}</div>
+        <div class="lb-sub">${r.dateStr} · 押 $${fmtMoney(r.predict)} · 膽量 ${r.courage.toFixed(1)}% · 容許 ±${r.allowance}%</div>
+      </div>
+      <div class="lb-right">
+        <div class="lb-mult ${r.multiplier >= 1 ? 'win' : 'lose'}">${r.multiplier.toFixed(2)}×</div>
+        <div class="lb-chicken">${chickens || '—'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderHomeContent() {
+  const settle = currentSettlePrice();
+  const results = computeAllResults(settle);
+  const betCount = state.bets.length;
+  const winCount = results.filter(r => r.multiplier >= 1).length;
+  const totalMultiplierSum = results.reduce((s, r) => s + r.multiplier, 0);
+  const hostPL = betCount - totalMultiplierSum;
+  const stale = S.src === 'fallback';
+
+  return `
+  <div class="hero">
     <div class="marquee"></div>
-    <img class="logo" src="assets/logo.png" alt="WINNER WINNER CHICKEN DINNER"
-      onerror="this.style.display='none'; var f=document.getElementById('logoFallback'); if(f) f.style.display='block';">
-    <div class="logo-fallback" id="logoFallback"><div class="eb">WINNER WINNER CHICKEN DINNER</div></div>
-    <h1>比特幣開盤價預測賽
-      <span>9/11 00:00（UTC+8）Coinbase 開盤結算 · 賭一頓飯</span>
-    </h1>
-    <div class="pot">
-      <div class="price-now">
-        <div class="k">BTC / USD 現價</div>
-        <div class="v" id="pMkt">—</div>
-        <div class="cap" id="pMktCap">同步中…</div>
+    <img src="assets/logo.png" alt="WINNER WINNER CHICKEN DINNER" class="hero-img" id="hero-logo"
+      onerror="this.style.display='none'; document.getElementById('hero-fallback')?.classList.remove('hidden');">
+    <div id="hero-fallback" class="hidden">
+      <div class="hero-emoji">🍗</div>
+      <h1>WINNER WINNER<br>CHICKEN DINNER</h1>
+    </div>
+    <div class="btc-ticker ${stale ? 'stale' : ''}" id="btc-ticker">
+      <span class="sym">BTC/USD</span>
+      <span class="price" id="hero-price">${S.mkt ? '$' + fmtMoney(S.mkt) : '同步中…'}</span>
+    </div>
+    <div class="btc-note" id="btc-note">${stale ? '⚠️ 市價暫時抓不到,顯示的是最後一次成功的價格' : 'Coinbase Exchange · 9/11 00:00(UTC+8)開盤結算'}</div>
+  </div>
+
+  <div class="summary-bar" id="summary-bar">${summaryBarHtml(betCount, winCount, hostPL)}</div>
+
+  <div class="section">
+    <div class="section-title">📈 誰押在哪裡</div>
+    <div class="card"><canvas id="scatter-canvas" height="180"></canvas></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🎚️ 假設結算價(拖動看排名怎麼變)</div>
+    <div class="card">
+      <div class="slider-row">
+        <div class="lbl-row"><span>假設 9/11 開出</span><b id="assume-val">$${fmtMoney(settle)}</b></div>
+        <input type="range" id="assume-slider" min="${SLIDER_LO}" max="${SLIDER_HI}" step="250" value="${Math.round(settle)}" aria-label="假設結算價">
+        <div class="ends"><span>${fmtMoney(SLIDER_LO)}</span><span>${fmtMoney(SLIDER_HI)}</span></div>
       </div>
     </div>
   </div>
 
-  <!-- ================= 戰況 ================= -->
-  <div class="pane" id="p1">
-    <div class="card">
-      <div class="scn">
-        <div><span class="lbl">假設 9/11 開在</span>
-          <div class="big">$<span id="sv"></span></div></div>
-      </div>
-      <input type="range" id="settle" min="30000" max="120000" step="250" aria-label="假設結算價">
-      <div class="ends"><span id="slo">—</span><span>拉動看排名怎麼洗牌</span><span id="shi">—</span></div>
+  <div class="section">
+    <div class="section-title">🏆 排行榜</div>
+    <div class="card" style="margin-bottom:8px">
+      <div class="rule-text" id="conn">${state.connMsg}</div>
+      <div class="rule-text">依上面的假設結算價即時重排</div>
     </div>
+    <div id="leaderboard-list">${leaderboardHtml(results)}</div>
+  </div>
 
+  <div class="section">
+    <div class="section-title">📖 遊戲規則</div>
     <div class="card">
-      <h2>📈 誰押在哪裡</h2>
-      <p class="sub">金線是 BTC 走勢,圓點是每個人下注的位置。<br>虛線越長 = 他當時越敢偏離市價。</p>
-      <svg id="board" viewBox="0 0 390 300" role="img" aria-label="全場下注分布圖"></svg>
-    </div>
-
-    <div class="card">
-      <h2>🏆 排行榜</h2>
-      <div class="sub" id="conn" style="margin-top:6px">連線中…</div>
-      <p class="sub">依上面的假設結算價即時重排</p>
-      <div class="plist" id="plist" style="margin-top:12px"></div>
-      <div class="empty" id="empty">還沒有人下注。<br>切到「下注」開第一張券。</div>
-    </div>
-
-    <div class="card">
-      <h2>📖 遊戲規則</h2>
       <div class="rule-flow">
         <div class="rule-chip"><div class="ico">😤</div><div class="lbl">膽量%</div></div>
         <div class="rule-arrow">×</div>
@@ -317,444 +381,164 @@ nav button[aria-selected=true] .ic{background:rgba(242,183,5,.18)}
       <div class="rule-divider"></div>
       <div class="rule-notes">
         結算 = <b>Coinbase Exchange BTC-USD</b>,2026/09/11 00:00(UTC+8)開盤價。<br>
-
+        截止前可隨時改注,計分只看最新一筆,但每次送出都會留下紀錄。
       </div>
     </div>
   </div>
-
-  <!-- ================= 下注 ================= -->
-  <div class="pane" id="p2" hidden>
-    <div class="card">
-      <div class="f3" style="grid-template-columns:1fr 1fr">
-        <div><span class="lbl">當下市價</span><div class="num" style="padding-top:7px">$<span id="mkt">—</span></div></div>
-        <div><span class="lbl">膽量</span><div class="num" style="padding-top:7px"><span id="guts">—</span><small>%</small></div></div>
-      </div>
-      <p class="sub" style="margin-top:10px">距 9/11 還有 <b id="dleft"></b> 天。</p>
-    </div>
-
-    <div class="card">
-      <span class="lbl" style="text-align:center">你賭 9/11 開在</span>
-      <input class="betin" id="bet" type="text" inputmode="numeric" aria-label="預測價格">
-      <input type="range" id="slider" aria-label="調整預測價格">
-      <div class="ends"><span id="rlo"></span><span>市價 $<span id="rmid">—</span></span><span id="rhi"></span></div>
-      <div class="nudge">
-        <button data-d="-2000">−2000</button><button data-d="-500">−500</button>
-        <button data-d="500">+500</button><button data-d="2000">+2000</button>
-      </div>
-
-      <div class="meter">
-        <div class="vd" id="verdict">WINNER WINNER</div>
-        <div class="dr" id="plates">🍗</div>
-        <div class="kx" id="kmax">1.00×</div>
-        <div class="cap">若 9/11 剛好開在你押的價</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>🎲 賠率全景</h2>
-      <p class="sub">橫軸 = 9/11 實際開在多少　縱軸 = 你換到幾份餐</p>
-      <svg id="chart" viewBox="0 0 390 175" role="img" aria-label="賠率分布圖"></svg>
-      <div class="act">
-        <select id="name" aria-label="你的名字"></select>
-        <input type="text" id="pin" placeholder="PIN" inputmode="numeric" maxlength="6"
-               aria-label="4 到 6 位數 PIN" style="text-align:center">
-        <button class="go" id="submit">下注</button>
-      </div>
-      <p class="sub" style="margin-top:8px">
-        首次下注請設定並記住 4 到 6 位數字 PIN 碼，<b>若之後要改注需填入才能改注。</b>
-      </p>
-      <div class="msg" id="msg"></div>
-    </div>
-  </div>
-
-  <div class="foot">
-    結算 = Coinbase Exchange BTC-USD · 9/11 00:00 UTC+8 開盤價<br>
-    餐點倍數 = (1 + 膽量 ÷ 10) × (1 − 誤差 ÷ 容許值)　·　容許值 = round(6 × √剩餘天數)<br>
-    截止前可隨時改注，計分只看最新一筆，但每次送出都會留下紀錄。
-  </div>
-</div>
-
-<nav role="tablist"><div class="in">
-  <button role="tab" id="t1" aria-selected="true"><span class="ic">📊</span>戰況</button>
-  <button role="tab" id="t2" aria-selected="false"><span class="ic">🍗</span>下注</button>
-</div></nav>
-
-<script src="src/lib.js"></script>
-<script src="src/api.js"></script>
-<script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbz96sNqUTzyxmVymm9G1R0TYAcYjYX2Vb5wxM-ZswwGAez3SVYdXQvs8i695XrRYODw/exec';
-// 兩個滑桿共用的範圍。刻意用固定值而非隨市價浮動,讓拖曳的尺度不會每次
-// 重新整理都變。範圍大到單靠拖曳無法精調,所以下注頁保留了 ±500／±2000
-// 的按鈕與可直接輸入的數字欄位。
-const SLIDER_LO = 30000, SLIDER_HI = 120000;
-const T0 = Date.parse('2026-08-26T00:00:00+08:00');  // 圖表時間軸起點
-const T1 = SETTLE_MS;                                 // 來自 src/lib.js
-
-const $ = i => document.getElementById(i);
-const fmt = n => Math.round(n).toLocaleString('en-US');
-const esc = s => String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
-
-const api = ChickenApi.createApi({ url: API_URL });
-
-let S = { mkt: 0, tol: 0, daysLeft: 0, closed: false, roster: [], serverTime: '' };
-let bet = 0;           // 目前輸入的預測價
-let settle = 0;        // 戰況頁的假設結算價
-let mine = null;       // 我最新一筆（從 roster 認出來）
-let klines = [];       // Task 9 會填入真實走勢
-let pollTimer = null;
-let busy = false;
-
-/* ===== 共用 ===== */
-function drum(k){
-  const f = Math.floor(k), fr = k - f;
-  let s = "🍗".repeat(Math.min(f, 5));
-  if (fr > .12 && f < 5) s += `<span style="opacity:${(.22+fr*.78).toFixed(2)}">🍗</span>`;
-  return s || `<span style="opacity:.16">🍗</span>`;
-}
-function myName(){ return ($("name").value || '').trim(); }
-// 用正規化後的名字比對,否則「阿明」與「 阿明 」會被當成兩個人,
-// 玩家就看不到自己那一點被標成金色。
-function isMine(r){ return !!mine && normalizeName(r.name) === normalizeName(mine.name); }
-// 根據選中的名字更新 mine。若該名字已在 roster 中，mine = { name }；否則 mine = null
-function updateMine(selectedName){
-  if (!selectedName) { mine = null; return; }
-  mine = { name: selectedName };
-  if (!S.roster.some(isMine)) mine = null;
-}
-function conn(msg, bad){
-  $("conn").textContent = msg;
-  $("conn").style.color = bad ? 'var(--coral)' : 'var(--navy-2)';
+  `;
 }
 
-/* ===== 狀態同步 ===== */
-async function refresh(){
+function afterHomeRender() {
+  const slider = $('assume-slider');
+  if (slider) {
+    slider.addEventListener('input', e => {
+      state.assumedSettle = Number(e.target.value);
+      $('assume-val').textContent = '$' + fmtMoney(state.assumedSettle);
+      updateHomeDynamic();
+    });
+  }
+  drawScatterChart();
+}
+
+/* 只更新統計/排行榜/走勢圖/連線狀態,不重繪整頁——拖動假設結算價滑桿時,或
+   30 秒輪詢收到新資料時,若整頁重繪會把使用者正在操作中的 range input
+   元素整個換掉,拖曳會被瀏覽器判定為中斷。所有元素都用 if(el) 保護,
+   使用者切到「下注」分頁時這些 id 不存在,呼叫不會報錯。 */
+function updateHomeDynamic() {
+  const heroPrice = $('hero-price');
+  if (heroPrice) heroPrice.textContent = S.mkt ? '$' + fmtMoney(S.mkt) : '同步中…';
+  const ticker = $('btc-ticker');
+  if (ticker) ticker.classList.toggle('stale', S.src === 'fallback');
+  const note = $('btc-note');
+  if (note) note.textContent = S.src === 'fallback'
+    ? '⚠️ 市價暫時抓不到,顯示的是最後一次成功的價格'
+    : 'Coinbase Exchange · 9/11 00:00(UTC+8)開盤結算';
+
+  const connEl = $('conn');
+  if (connEl) {
+    connEl.textContent = state.connMsg;
+    connEl.style.color = state.connBad ? 'var(--neon-red)' : 'var(--cream-dim)';
+  }
+
+  const settle = currentSettlePrice();
+  const results = computeAllResults(settle);
+  const betCount = state.bets.length;
+  const winCount = results.filter(r => r.multiplier >= 1).length;
+  const totalMultiplierSum = results.reduce((s, r) => s + r.multiplier, 0);
+  const hostPL = betCount - totalMultiplierSum;
+
+  const summaryEl = $('summary-bar');
+  if (summaryEl) summaryEl.innerHTML = summaryBarHtml(betCount, winCount, hostPL);
+
+  const lbList = $('leaderboard-list');
+  if (lbList) lbList.innerHTML = leaderboardHtml(results);
+
+  drawScatterChart();
+}
+
+/* 下注分布圖:BTC 走勢線(來自 klines,Coinbase)+ 每人一個點 + 虛線回到
+   走勢線(長度=膽量)。橫軸固定在開賽日(T0)到結算時刻(T1),不隨資料量
+   變動,座標系才不會因為滑桿或輪詢跳動。 */
+function drawScatterChart() {
+  const canvas = $('scatter-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = canvas.clientWidth * 2; // retina
+  const H = canvas.height = 180 * 2;
+  const pad = { l: 50 * 2, r: 14 * 2, t: 14 * 2, b: 26 * 2 };
+
+  ctx.clearRect(0, 0, W, H);
+  const prices = klines.map(k => k.close)
+    .concat(state.bets.flatMap(b => [b.predict, b.marketAtBet]))
+    .filter(v => v > 0);
+  if (!prices.length) return;
+  const minP = Math.min(...prices) * 0.97;
+  const maxP = Math.max(...prices) * 1.03;
+
+  const X = t => pad.l + (Math.min(Math.max(t, T0), T1) - T0) / (T1 - T0 || 1) * (W - pad.l - pad.r);
+  const Y = p => H - pad.b - (p - minP) / (maxP - minP || 1) * (H - pad.t - pad.b);
+
+  ctx.font = (11 * 2) + 'px JetBrains Mono, monospace';
+  ctx.strokeStyle = '#4a341c';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 2; i++) {
+    const p = minP + (maxP - minP) * i / 2;
+    const y = Y(p);
+    ctx.globalAlpha = .5; ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.fillStyle = '#c9bfa8';
+    ctx.fillText('$' + Math.round(p / 1000) + 'k', 4, y + 4 * 2);
+  }
+
+  if (klines.length > 1) {
+    ctx.beginPath();
+    klines.forEach((k, i) => { const x = X(k.t), y = Y(k.close); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+    ctx.strokeStyle = '#f2b705'; ctx.lineWidth = 2 * 2; ctx.stroke();
+  }
+
+  ctx.fillStyle = '#c9bfa8';
+  ctx.fillText('8/26', pad.l - 6, H - 6);
+  ctx.fillText('9/11', W - pad.r - 30, H - 6);
+
+  const settle = currentSettlePrice();
+  state.bets.forEach(b => {
+    if (isNaN(b.ts)) return;
+    const x = X(b.ts);
+    const yDot = Y(b.predict);
+    const yTrend = Y(b.marketAtBet);
+    const m = multOf(b.predict, b.marketAtBet, settle, b.allowance);
+    ctx.setLineDash([4 * 2, 3 * 2]);
+    ctx.strokeStyle = '#a87c07'; ctx.lineWidth = 1.5 * 2;
+    ctx.beginPath(); ctx.moveTo(x, yDot); ctx.lineTo(x, yTrend); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(x, yDot, 5 * 2, 0, Math.PI * 2);
+    ctx.fillStyle = m >= 1 ? '#3dffa0' : '#ff3b5c';
+    ctx.fill();
+  });
+}
+
+/* ---------------- 下注(Task B 才會實作,這裡先放占位) ---------------- */
+function renderBetContent() {
+  return `
+  <div class="section">
+    <div class="card"><div class="empty-note">下注功能整理中,敬請期待。</div></div>
+  </div>`;
+}
+
+/* ---------------------------------------------------------------------
+   全域事件(分頁切換)
+   --------------------------------------------------------------------- */
+function bindGlobalEvents() {
+  document.querySelectorAll('.tabbar button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.tab = btn.dataset.tab;
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+}
+
+/* ===== 狀態同步(沿用目前 index.html 已驗證過的模式) ===== */
+async function refresh() {
   try {
     const s = await api.getState();
     if (!s.ok) throw new Error(s.message || '伺服器回報錯誤');
     S = s;
-    if (!settle) settle = Math.round(S.mkt);
-    if (!bet) bet = Math.round(S.mkt);
-    conn(S.src === 'fallback'
+    state.bets = betsFromRoster(S.roster);
+    if (state.assumedSettle == null) state.assumedSettle = Math.round(S.mkt);
+    state.connMsg = S.src === 'fallback'
       ? '市價暫時抓不到,顯示的是最後一次成功的價格。'
-      : `已同步 · 市價 $${fmt(S.mkt)} · 剩 ${S.daysLeft} 天`);
-    renderBoard(); render();
+      : `已同步 · 市價 $${fmtMoney(S.mkt)} · 剩 ${S.daysLeft} 天`;
+    state.connBad = S.src === 'fallback';
   } catch (err) {
-    conn('連線不到伺服器,畫面可能不是最新的。' + err.message, true);
+    state.connMsg = '連線不到伺服器,畫面可能不是最新的。' + err.message;
+    state.connBad = true;
   }
+  updateHomeDynamic();
 }
 
-/* ===== 戰況 ===== */
-function scoreOf(r){ return multOf(r.bet, r.mkt, settle, r.tol); }
-
-function renderBoard(){
-  // 滑桿範圍跟著實際市價走,不能寫死——BTC 價格可能整個落在寫死的區間外。
-  if (S.mkt) {
-    const slo = SLIDER_LO, shi = SLIDER_HI;
-    settle = Math.min(shi, Math.max(slo, settle));
-    Object.assign($("settle"), { min: slo, max: shi, step: 250 });
-    $("slo").textContent = fmt(slo); $("shi").textContent = fmt(shi);
-  }
-  $("sv").textContent = fmt(settle);
-  $("settle").value = settle;
-  $("pMkt").textContent = S.mkt ? '$' + fmt(S.mkt) : '—';
-  const cap = $("pMktCap");
-  const stale = S.src === 'fallback';
-  cap.textContent = stale
-    ? '行情暫時抓不到,這是最後一次成功的價格'
-    : 'Coinbase Exchange';
-  cap.classList.toggle('stale', stale);
-  drawScatter(); drawList();
-}
-
-// Y 軸刻度。區間夠寬就用整千(79k),窄到整千會重複時改用一位小數(78.9k),
-// 否則只有一兩筆下注時三個刻度會印出同一個數字。
-function kLabel(p, span){
-  return (span >= 4000 ? Math.round(p/1000) : (p/1000).toFixed(1)) + 'k';
-}
-
-function drawScatter(){
-  const W = 390, H = 300, L = 40, R = 10, T = 16, B = 30;
-  // K 線的收盤價也要納入範圍,否則走勢線會被畫到圖框外面。
-  const ps = S.roster.map(r => r.bet)
-    .concat(klines.map(k => k.close))
-    .concat([settle, S.mkt]).filter(v => v > 0);
-  if (!ps.length) { $("board").innerHTML = ''; return; }
-  let lo = Math.min(...ps), hi = Math.max(...ps);
-  const pd = (hi - lo) * .1 || 1000; lo -= pd; hi += pd;
-
-  const x = ms => L + (Math.min(Math.max(ms, T0), T1) - T0) / (T1 - T0) * (W - L - R);
-  const y = p => H - B - (p - lo) / (hi - lo) * (H - B - T);
-  let s = "";
-
-  for (let i = 0; i <= 4; i++) {
-    const p = lo + (hi - lo) * i / 4;
-    s += `<line x1="${L}" y1="${y(p)}" x2="${W-R}" y2="${y(p)}" stroke="#4a341c"/>
-    <text x="${L-5}" y="${y(p)+3.5}" text-anchor="end" font-size="8.5" font-weight="600" fill="#c9bfa8">${kLabel(p, hi - lo)}</text>`;
-  }
-  s += `<line x1="${L}" y1="${y(settle)}" x2="${W-R}" y2="${y(settle)}" stroke="#ff3b5c" stroke-width="1.5" stroke-dasharray="5 4"/>
-  <text x="${W-R}" y="${y(settle)-6}" text-anchor="end" font-size="9" font-weight="800" fill="#ff3b5c">假設 ${fmt(settle)}</text>`;
-
-  if (klines.length > 1) {
-    s += `<polyline points="${klines.map(k => `${x(k.t)},${y(k.close)}`).join(' ')}" fill="none" stroke="#f2b705" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
-  }
-
-  // 標籤防疊：先收集所有點的座標與人名，畫完點跟虛線之後再統一交給
-  // layoutLabels 排版、吐出 SVG——不要在畫點的迴圈裡順手排標籤位置，
-  // 不然沒辦法看到「全部 25 個」點之後再決定誰該讓誰。
-  const dots = [];
-  S.roster.forEach(r => {
-    const ms = Date.parse(r.ts); if (isNaN(ms)) return;
-    const cx = x(ms), cy = y(r.bet), m = scoreOf(r);
-    const isMe = isMine(r);
-    s += `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${y(r.mkt)}" stroke="#c9bfa8" stroke-opacity=".3" stroke-dasharray="2 3"/>`;
-    s += `<circle cx="${cx}" cy="${cy}" r="${isMe?6.5:5.5}" fill="${m>=1?'#3dffa0':'#ff3b5c'}" stroke="${isMe?'#f2b705':'#f4ecd8'}" stroke-width="${isMe?2.5:1.5}"/>`;
-    dots.push({ cx, cy, name: r.name, isMe });
-  });
-  s += layoutLabels(dots, { T, B, H, plotRight: W - R });
-
-  [['8/26', T0], ['8/31', Date.parse('2026-08-31T00:00:00+08:00')],
-   ['9/05', Date.parse('2026-09-05T00:00:00+08:00')], ['9/11', T1]].forEach(([lbl, ms], i) => {
-    s += `<text x="${x(ms)}" y="${H-B+15}" text-anchor="${i===0?'start':i===3?'end':'middle'}" font-size="8.5" font-weight="600" fill="#c9bfa8">${lbl}</text>`;
-  });
-  $("board").innerHTML = s;
-}
-
-// ===== 標籤排版 =====
-// 25 人時下注價格大多落在市價附近幾趴，cy 會擠成窄窄一條帶，硬要
-// 垂直疊標籤（每個約 11px 高）疊不進 254px 高的繪圖區。這裡改成：
-// 1) 每個點依左右兩側分流（左右各自的可用高度等於整個繪圖區高度，
-//    等於把可用空間翻倍）；2) 同一側內先依 cy 由上而下 greedy 排開，
-//    每個至少跟前一個差 LABEL_H；3) 如果排到超出下界，再從下往上壓縮
-//    回繪圖區內；4) 標籤最終位置跟原本的點差超過 4px 就補一條細的
-//    低透明度連接線，不然讀者認不出標籤對應哪一個點。
-// 最壞情況：若同一側的標籤數 * LABEL_H 仍大於可用高度（本頁面 25 人、
-// 兩側各約 12～13 個、可用高度 246px 時不會發生），壓縮後最上面幾個
-// 標籤會被夾在同一個 minY、彼此重疊——但座標保證仍落在繪圖區內，
-// 不會跑到圖外或變成 NaN。
-function layoutLabels(dots, geo){
-  const { T, B, H, plotRight } = geo;
-  const LABEL_H = 11;
-  const minY = T + 8, maxY = H - B;
-  const EDGE = 45; // 點離繪圖區右邊界多近算「擠」，強制標籤改放左側
-
-  const mine = dots.find(d => d.isMe) || null;
-  // mine 優先分邊：先讓它挑邊，其餘的人再依「靠右邊界」強制規則、
-  // 否則依目前左右兩側已分配的數量做平衡（右側人少就給右側)。
-  const ordered = mine ? [mine, ...dots.filter(d => d !== mine)] : dots.slice();
-  const left = [], right = [];
-  ordered.forEach(d => {
-    const side = d.cx > plotRight - EDGE ? 'left' : (right.length <= left.length ? 'right' : 'left');
-    (side === 'left' ? left : right).push(d);
-  });
-
-  return packSide(right, 'right') + packSide(left, 'left');
-
-  function packSide(items, side){
-    if (!items.length) return '';
-    const anchor = side === 'right' ? 'start' : 'end';
-    const dx = side === 'right' ? 9 : -9;
-    const mineD = items.find(d => d.isMe);
-    const placed = mineD ? packAroundFixed(items, mineD) : packLinear(items);
-    let str = '';
-    placed.forEach(({ d, ly }) => {
-      if (Math.abs(ly - d.cy) > 4) {
-        str += `<line x1="${d.cx}" y1="${d.cy}" x2="${d.cx + dx}" y2="${ly}" stroke="#c9bfa8" stroke-opacity=".22" stroke-width=".8"/>`;
-      }
-      str += `<text x="${d.cx + dx}" y="${ly + 3.5}" text-anchor="${anchor}" font-size="9.5" font-weight="700" fill="#f4ecd8">${esc(d.name)}</text>`;
-    });
-    return str;
-  }
-
-  // 一般貪婪排版：依 cy 由上而下排開，擠出下界時再從下往上壓縮回來。
-  function packLinear(items){
-    const sorted = items.slice().sort((a, b) => a.cy - b.cy);
-    const ys = []; let prev = -Infinity;
-    sorted.forEach(d => { const ly = Math.max(d.cy, prev + LABEL_H); ys.push(ly); prev = ly; });
-    if (ys.length && ys[ys.length - 1] > maxY) {
-      ys[ys.length - 1] = maxY;
-      for (let i = ys.length - 2; i >= 0; i--) ys[i] = Math.min(ys[i], ys[i + 1] - LABEL_H);
-    }
-    return sorted.map((d, i) => ({ d, ly: Math.min(maxY, Math.max(minY, ys[i])) }));
-  }
-
-  // mine 優先：先把 mine 釘在自己理想的 y（夾在繪圖區內），其餘依 cy
-  // 分成「在它之上」跟「在它之下」兩組，各自朝遠離 mine 的方向 greedy
-  // 排開，這樣 mine 的標籤位置不會被其他人擠掉。
-  function packAroundFixed(items, mineD){
-    const fixedY = Math.min(maxY, Math.max(minY, mineD.cy));
-    const above = items.filter(d => d !== mineD && d.cy <= mineD.cy).sort((a, b) => b.cy - a.cy);
-    const below = items.filter(d => d !== mineD && d.cy > mineD.cy).sort((a, b) => a.cy - b.cy);
-
-    const aboveYs = []; let prev = fixedY;
-    above.forEach(d => { const ly = Math.min(d.cy, prev - LABEL_H); aboveYs.push(ly); prev = ly; });
-    if (aboveYs.length && aboveYs[aboveYs.length - 1] < minY) {
-      aboveYs[aboveYs.length - 1] = minY;
-      for (let i = aboveYs.length - 2; i >= 0; i--) aboveYs[i] = Math.max(aboveYs[i], aboveYs[i + 1] + LABEL_H);
-    }
-
-    const belowYs = []; prev = fixedY;
-    below.forEach(d => { const ly = Math.max(d.cy, prev + LABEL_H); belowYs.push(ly); prev = ly; });
-    if (belowYs.length && belowYs[belowYs.length - 1] > maxY) {
-      belowYs[belowYs.length - 1] = maxY;
-      for (let i = belowYs.length - 2; i >= 0; i--) belowYs[i] = Math.min(belowYs[i], belowYs[i + 1] - LABEL_H);
-    }
-
-    const result = [{ d: mineD, ly: fixedY }];
-    above.forEach((d, i) => result.push({ d, ly: Math.min(maxY, Math.max(minY, aboveYs[i])) }));
-    below.forEach((d, i) => result.push({ d, ly: Math.min(maxY, Math.max(minY, belowYs[i])) }));
-    return result;
-  }
-}
-
-function drawList(){
-  const el = $("plist"); el.innerHTML = "";
-  $("empty").style.display = S.roster.length ? "none" : "block";
-  const sorted = S.roster.slice().sort((a, b) => scoreOf(b) - scoreOf(a));
-  const top = sorted.length ? scoreOf(sorted[0]) : 1;
-  sorted.forEach((r, i) => {
-    const m = scoreOf(r);
-    const isMe = isMine(r);
-    const d = document.createElement("div");
-    d.className = "p" + (m>=1 ? "" : " lose") + (i===0 && m>=1 ? " gold" : "") + (isMe ? " me" : "");
-    const ms = Date.parse(r.ts);
-    const dayLbl = isNaN(ms) ? '—' : (new Date(ms).getMonth()+1) + '/' + String(new Date(ms).getDate()).padStart(2,'0');
-    d.innerHTML = `<div class="fill" style="width:${Math.min(100, m/Math.max(top,1)*100)}%"></div>
-      <div class="rk">${i+1}</div>
-      <div class="av">${esc(r.name.slice(0,1))}</div>
-      <div class="pi">
-        <div class="pn">${esc(r.name)}${isMe?'<span class="tag">你</span>':''}</div>
-        <div class="pm">${dayLbl} · 押 ${fmt(r.bet)} · 膽量 ${r.guts.toFixed(1)}%</div>
-      </div>
-      <div class="px"><div class="x">${m.toFixed(2)}×</div><div class="d">${drum(m)}</div></div>`;
-    el.appendChild(d);
-  });
-}
-
-/* ===== 下注 ===== */
-function render(){
-  if (!S.mkt) return;
-  const mkt = S.mkt, tol = S.tol;
-  const lo = SLIDER_LO, hi = SLIDER_HI;
-  bet = Math.min(hi, Math.max(lo, bet || Math.round(mkt)));
-  $("mkt").textContent = fmt(mkt);
-  $("dleft").textContent = S.daysLeft;
-  $("bet").value = fmt(bet);
-  Object.assign($("slider"), { min: lo, max: hi, step: 100, value: bet });
-  // 滑桿範圍固定在 3 萬到 12 萬,市價不再是中點,所以中間直接把市價印出來
-  // 當參考點——否則玩家看不出自己拖到的位置離市價多遠。
-  $("rlo").textContent = fmt(lo); $("rhi").textContent = fmt(hi);
-  $("rmid").textContent = fmt(mkt);
-
-  const g = gutsOf(bet, mkt), k = 1 + g/10;
-  $("guts").textContent = g.toFixed(2);
-  $("kmax").textContent = k.toFixed(2) + "×";
-  $("plates").innerHTML = drum(k);
-  const v = $("verdict");
-  v.textContent = k>=1.5 ? "WINNER WINNER!" : k>=1.15 ? "CHICKEN DINNER" : "只夠回本";
-  v.className = "vd" + (k>=1.15 ? "" : " lose");
-
-  $("submit").textContent = mine ? "改注" : "下注";
-  $("submit").disabled = busy || S.closed;
-  if (S.closed) $("msg").textContent = "已於 9/11 00:00 截止,不能再改了。";
-  drawCurve(mkt, tol);
-}
-
-function drawCurve(mkt, tol){
-  const W = 390, H = 175, L = 30, B = 26, T = 16;
-  // 橫軸必須同時包含市價與你押的價,兩邊再各留 12% 的餘裕看倍數怎麼掉。
-  // 不能寫死成 mkt±12%:滑桿範圍是 3 萬到 12 萬,押得夠遠的話
-  // 「你押這」那條線會被畫到圖外,玩家就看不到自己在哪了。
-  const pad = mkt * .12;
-  const lo = Math.min(bet, mkt) - pad, hi = Math.max(bet, mkt) + pad;
-  const N = 23, pts = [];
-  for (let i = 0; i < N; i++) { const s = lo + (hi-lo)*i/(N-1); pts.push([s, multOf(bet, mkt, s, tol)]); }
-  const my = Math.max(1.7, ...pts.map(p => p[1])) * 1.12;
-  const x = s => L + (s-lo)/(hi-lo)*(W-L-8), y = v => H-B-(v/my)*(H-B-T), bw = (W-L-8)/N-2.5;
-  let s = `<line x1="${L}" y1="${y(1)}" x2="${W-8}" y2="${y(1)}" stroke="#ff3b5c" stroke-width="1.2" stroke-dasharray="5 3"/>
-  <text x="${L-4}" y="${y(1)+3.5}" text-anchor="end" font-size="8.5" font-weight="700" fill="#ff3b5c">1.0</text>
-  <line x1="${L}" y1="${H-B}" x2="${W-8}" y2="${H-B}" stroke="#4a341c" stroke-width="1.5"/>`;
-  pts.forEach(([sv, v]) => { s += `<rect x="${x(sv)-bw/2}" y="${y(v)}" width="${bw}" height="${Math.max(0,(H-B)-y(v))}" rx="2" fill="${v>=1?'#3dffa0':'#4a341c'}"/>`; });
-  s += `<line x1="${x(bet)}" y1="${T-8}" x2="${x(bet)}" y2="${H-B}" stroke="#f2b705" stroke-width="2"/>
-  <text x="${x(bet)}" y="${T-11}" text-anchor="middle" font-size="9" font-weight="800" fill="#f2b705">你押這</text>`;
-  // 底部刻度:兩端各一個,中間標市價。市價已不是中點,所以用它自己的 x 定位。
-  s += `<text x="${L}" y="${H-B+14}" text-anchor="start" font-size="8.5" font-weight="600" fill="#c9bfa8">${fmt(lo)}</text>`;
-  s += `<text x="${W-8}" y="${H-B+14}" text-anchor="end" font-size="8.5" font-weight="600" fill="#c9bfa8">${fmt(hi)}</text>`;
-  s += `<line x1="${x(mkt)}" y1="${H-B}" x2="${x(mkt)}" y2="${H-B+4}" stroke="#c9bfa8" stroke-width="1"/>`;
-  s += `<text x="${x(mkt)}" y="${H-B+14}" text-anchor="middle" font-size="8.5" font-weight="600" fill="#c9bfa8">市價 ${fmt(mkt)}</text>`;
-  $("chart").innerHTML = s;
-}
-
-/* ===== 送出 ===== */
-async function submitBet(payload){
-  busy = true; $("submit").disabled = true;
-  try {
-    const res = await api.placeBet(payload);
-    if (!res.ok) {
-      // 伺服器有回應但拒絕:輸入全部保留,讓玩家改完再送。
-      $("msg").textContent = res.message || ('送出被拒:' + res.reason);
-      $("msg").style.color = 'var(--coral)';
-      return false;
-    }
-    api.saveMe(payload.name, payload.pin);
-    mine = { name: payload.name };
-    $("msg").style.color = 'var(--aqua-d)';
-    $("msg").textContent = res.duplicate
-      ? '這筆剛剛已經送出過了,沒有重複記錄。'
-      : `${payload.name} 押 $${fmt(payload.bet)} 已入場（第 ${res.seq} 次送出）。截止前還可以再改。`;
-    await refresh();
-    return true;
-  } catch (err) {
-    // 送不出去:api.js 已暫存,提示可重送。輸入不清空、按鈕要放開。
-    $("msg").style.color = 'var(--coral)';
-    $("msg").textContent = '送不出去(' + err.message + ')。已幫你存起來,連上網後按一次「重送」。';
-    return false;
-  } finally {
-    busy = false;
-    // render() 在 S.mkt 為 0 時會早期返回,不執行恢復按鈕的邏輯。
-    // 必須在這裡明確還原按鈕狀態,確保即使要求失敗,遊戲未截止時按鈕也能重新啟用。
-    $("submit").disabled = S.closed;
-    render();
-  }
-}
-
-// 名字下拉選單由 ROSTER 產生（來自 src/lib.js）。第一個選項是空的占位,
-// 逼玩家主動選,免得有人沒注意就用了預設的第一個人的名字下注。
-(function fillNames(){
-  const sel = $("name");
-  sel.innerHTML = '<option value="">— 選你的名字 —</option>';
-  ROSTER.forEach(n => {
-    const o = document.createElement('option');
-    o.value = n; o.textContent = n; sel.appendChild(o);
-  });
-})();
-
-$("submit").onclick = () => {
-  const name = myName(), pin = ($("pin").value || '').trim();
-  $("msg").style.color = 'var(--coral)';
-  if (!name) { $("msg").textContent = "先從選單選你的名字。"; $("name").focus(); return; }
-  if (!/^\d{4,6}$/.test(pin)) { $("msg").textContent = "PIN 要 4 到 6 位數字。"; $("pin").focus(); return; }
-  submitBet({ name, pin, bet });
-};
-
-/* ===== 分頁與控制項 ===== */
-[["t1","p1"],["t2","p2"]].forEach(([t,p],i) => {
-  $(t).onclick = () => {
-    ["t1","t2"].forEach((x,j) => $(x).setAttribute("aria-selected", j===i));
-    $("p1").hidden = i!==0; $("p2").hidden = i!==1;
-    window.scrollTo({ top:0, behavior:'smooth' });
-    if (i===0) renderBoard();
-  };
-});
-$("settle").oninput = e => { settle = +e.target.value; renderBoard(); };
-$("slider").oninput = e => { bet = +e.target.value; render(); };
-$("bet").onchange = e => { const v = +e.target.value.replace(/[^\d]/g,''); if (v) bet = v; render(); };
-$("name").onchange = () => { updateMine(myName()); render(); renderBoard(); };
-document.querySelectorAll(".nudge button").forEach(b => b.onclick = () => { bet += +b.dataset.d; render(); });
-
-/* ===== 走勢線 ===== */
-// 歷史走勢直接向 Coinbase Exchange 取。這是唯讀公開資料,不影響計分,
-// 因此可以由前端抓;計分用的市價一律走伺服器。
-async function loadKlines(){
+/* ===== 走勢線:向 Coinbase Exchange 取,唯讀公開資料,不影響計分。
+   計分用的市價一律走伺服器(S.mkt),不是這裡抓到的。 ===== */
+async function loadKlines() {
   try {
     // granularity 單位是秒,86400 = 日線。
     const res = await fetch('https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400');
@@ -764,7 +548,6 @@ async function loadKlines(){
     // Coinbase 回 [time, low, high, open, close, volume],有兩點與 Binance 相反:
     //   1. time 的單位是「秒」不是毫秒 → 要乘 1000
     //   2. 排列是新到舊 → 畫折線前必須依時間升冪重排,否則線會來回折疊
-    // close 剛好兩家都在索引 4。
     klines = raw
       .map(k => ({ t: Number(k[0]) * 1000, close: Number(k[4]) }))
       .filter(k => isFinite(k.t) && isFinite(k.close) && k.close > 0 && k.t >= T0 && k.t <= T1)
@@ -777,25 +560,12 @@ async function loadKlines(){
 }
 
 /* ===== 啟動 ===== */
-(async function boot(){
-  const saved = api.loadMe();
-  if (saved) { $("name").value = saved.name; $("pin").value = saved.pin; }
-
+(async function boot() {
   await Promise.all([refresh(), loadKlines()]);
-  if (saved) updateMine(saved.name);
-  render(); renderBoard();
-
-  const pending = api.loadPending();
-  if (pending) {
-    $("msg").style.color = 'var(--coral)';
-    $("msg").innerHTML = `你有一筆 $${fmt(pending.bet)} 沒送出成功。` +
-      `<button class="ghost" id="resend" style="margin-left:6px">重送</button>` +
-      `<button class="ghost" id="drop">丟掉</button>`;
-    $("resend").onclick = () => submitBet(pending);
-    $("drop").onclick = () => { api.clearPending(); $("msg").textContent = ''; };
-  }
+  render();
 
   // 戰況頁每 30 秒同步一次。切到背景時停掉,免得手機一直耗電。
+  // startPoll 用 if(!pollTimer) 確保冪等,快速切分頁/切標籤不會疊出第二個計時器。
   const startPoll = () => { if (!pollTimer) pollTimer = setInterval(refresh, 30000); };
   const stopPoll = () => { clearInterval(pollTimer); pollTimer = null; };
   document.addEventListener('visibilitychange', () => document.hidden ? stopPoll() : (refresh(), startPoll()));
