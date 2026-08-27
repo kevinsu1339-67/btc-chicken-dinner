@@ -183,8 +183,10 @@ function validateSubmission(body) {
   const playerId = normalizeName(name);
 
   const pin = String(b.pin == null ? '' : b.pin).trim();
-  if (!/^\d{4}$/.test(pin)) {
-    return { ok: false, reason: 'bad_pin', message: 'PIN 必須是 4 位數字。' };
+  // 下限 4 位是刻意的:端點公開且「猜對 PIN 就等於可以冒名下注」,
+  // 猜對本身就是攻擊成功。1 位數只有 10 種組合,等於沒上鎖。
+  if (!/^\d{4,6}$/.test(pin)) {
+    return { ok: false, reason: 'bad_pin', message: 'PIN 必須是 4 到 6 位數字。' };
   }
 
   const bet = Number(b.bet);

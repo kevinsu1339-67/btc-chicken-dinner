@@ -143,11 +143,19 @@ test('validateSubmission 正常送出，回傳清理過的值（canonical 名字
   assert.strictEqual(r.nonce, 'abc-123');
 });
 
-test('validateSubmission 拒絕 3 位數與 5 位數的 PIN', () => {
+test('validateSubmission 接受 4 到 6 位數的 PIN', () => {
+  ['1234', '12345', '123456'].forEach((pin) => {
+    const r = lib.validateSubmission({ name: 'Kevin', pin: pin, bet: 1, nonce: 'n1' });
+    assert.strictEqual(r.ok, true, pin + ' 應該被接受');
+    assert.strictEqual(r.pin, pin, '回傳的 pin 應原樣保留');
+  });
+});
+
+test('validateSubmission 拒絕 3 位數與 7 位數的 PIN', () => {
   const short = lib.validateSubmission({ name: 'Kevin', pin: '123', bet: 1, nonce: 'n1' });
   assert.strictEqual(short.ok, false);
   assert.strictEqual(short.reason, 'bad_pin');
-  const long = lib.validateSubmission({ name: 'Kevin', pin: '12345', bet: 1, nonce: 'n1' });
+  const long = lib.validateSubmission({ name: 'Kevin', pin: '1234567', bet: 1, nonce: 'n1' });
   assert.strictEqual(long.ok, false);
   assert.strictEqual(long.reason, 'bad_pin');
 });

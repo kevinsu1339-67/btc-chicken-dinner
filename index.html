@@ -312,7 +312,7 @@ nav button[aria-selected=true] .ic{background:rgba(242,183,5,.18)}
       <div class="rule-divider"></div>
       <div class="rule-notes">
         結算 = <b>Coinbase Exchange BTC-USD</b>,2026/09/11 00:00(UTC+8)開盤價。<br>
-        僅限 <b>25 位登記在案的玩家</b>,以「名字 + 4 位數 PIN」核對身分,不接受名單外的名字。<br>
+        僅限 <b>25 位登記在案的玩家</b>,以「名字 + 4 到 6 位數 PIN」核對身分,不接受名單外的名字。<br>
         截止前可以隨時改注,<b>每次送出都會留下紀錄,但計分只看最新一筆</b>。
       </div>
     </div>
@@ -362,12 +362,12 @@ nav button[aria-selected=true] .ic{background:rgba(242,183,5,.18)}
       <svg id="chart" viewBox="0 0 390 175" role="img" aria-label="賠率分布圖"></svg>
       <div class="act">
         <select id="name" aria-label="你的名字"></select>
-        <input type="text" id="pin" placeholder="PIN" inputmode="numeric" maxlength="4"
-               aria-label="4 位數 PIN" style="text-align:center">
+        <input type="text" id="pin" placeholder="PIN" inputmode="numeric" maxlength="6"
+               aria-label="4 到 6 位數 PIN" style="text-align:center">
         <button class="go" id="submit">下注</button>
       </div>
       <p class="sub" style="margin-top:8px">
-        首次下注請設定並記住 4 位數字 PIN 碼，<b>若之後要改注需填入才能改注。</b>
+        首次下注請設定並記住 4 到 6 位數字 PIN 碼，<b>若之後要改注需填入才能改注。</b>
       </p>
       <div class="msg" id="msg"></div>
     </div>
@@ -721,7 +721,7 @@ $("submit").onclick = () => {
   const name = myName(), pin = ($("pin").value || '').trim();
   $("msg").style.color = 'var(--coral)';
   if (!name) { $("msg").textContent = "先從選單選你的名字。"; $("name").focus(); return; }
-  if (!/^\d{4}$/.test(pin)) { $("msg").textContent = "PIN 要 4 位數字。"; $("pin").focus(); return; }
+  if (!/^\d{4,6}$/.test(pin)) { $("msg").textContent = "PIN 要 4 到 6 位數字。"; $("pin").focus(); return; }
   submitBet({ name, pin, bet });
 };
 
