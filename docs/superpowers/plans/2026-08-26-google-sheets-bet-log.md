@@ -1045,6 +1045,27 @@ function doPost(e) {
 
 貼進 Apps Script，然後「部署 → 管理部署作業 → 編輯 → 版本選『新版本』→ 部署」。網址不變。
 
+> ⚠️ **改為白名單之後，這一節的驗證方式必須改變。**
+>
+> 原本用「測試甲」「測試乙」這種假名字。白名單上線後假名字一律被拒收，
+> 所以任何能通過驗證的寫入測試，都必然是用某個**真實玩家**的身分。
+>
+> 用真實玩家的名字跑測試會在 `players` 分頁用測試 PIN 把那個人註冊掉，
+> 導致本人之後拿到 `wrong_pin` 且無法自救——除非手動刪掉他的 `players` 列。
+>
+> **正確做法：另外複製一份試算表**，把 `Code.gs` 的 `SHEET_ID` 暫時指過去，
+> 跑完驗證再改回來。或在開賽前、確定還沒有人下注時跑，跑完立刻清場。
+>
+> ⚠️ **另一個 curl 陷阱：不要用 `-X POST`。**
+> `-X POST` 會強制所有請求都用 POST，包含跟隨 302 之後。Apps Script 會把
+> POST 導向 `googleusercontent.com/macros/echo`，那裡只接受 GET，於是回 405。
+> 但**寫入其實已經成功了**——你只是讀不到回應，還會誤以為要重試。
+> 正確寫法是只給 `-d`，讓 curl 自己推斷方法，`-L` 便會在 302 時改用 GET：
+>
+> ```bash
+> curl -sL "$URL" -H 'Content-Type: text/plain;charset=utf-8' -d '{...}'
+> ```
+
 - [ ] **Step 4: 用 curl 驗證六個情境**
 
 把 `<URL>` 換成你的部署網址。`Content-Type` 必須是 `text/plain`，這是繞過 CORS preflight 的關鍵，也是前端實際會送的格式。
@@ -1052,7 +1073,7 @@ function doPost(e) {
 **4a. 首次下注應成功並註冊：**
 
 ```bash
-curl -sL -X POST "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
+curl -sL "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
   -d '{"name":"測試甲","pin":"1234","bet":80000,"nonce":"t-001"}' | python3 -m json.tool
 ```
 
@@ -1061,7 +1082,7 @@ curl -sL -X POST "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
 **4b. 同一個 nonce 再送一次，不可重複寫入：**
 
 ```bash
-curl -sL -X POST "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
+curl -sL "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
   -d '{"name":"測試甲","pin":"1234","bet":80000,"nonce":"t-001"}' | python3 -m json.tool
 ```
 
@@ -1070,7 +1091,7 @@ curl -sL -X POST "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
 **4c. 改注（換 nonce）應寫入第二列：**
 
 ```bash
-curl -sL -X POST "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
+curl -sL "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
   -d '{"name":"測試甲","pin":"1234","bet":86000,"nonce":"t-002"}' | python3 -m json.tool
 ```
 
@@ -1079,7 +1100,7 @@ curl -sL -X POST "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
 **4d. PIN 錯誤必須被擋，且不寫入：**
 
 ```bash
-curl -sL -X POST "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
+curl -sL "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
   -d '{"name":"測試甲","pin":"9999","bet":70000,"nonce":"t-003"}' | python3 -m json.tool
 ```
 
@@ -1088,7 +1109,7 @@ curl -sL -X POST "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
 **4e. 全形名字要認得是同一個人：**
 
 ```bash
-curl -sL -X POST "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
+curl -sL "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
   -d '{"name":"　測試甲　","pin":"1234","bet":81000,"nonce":"t-004"}' | python3 -m json.tool
 ```
 
@@ -1097,7 +1118,7 @@ curl -sL -X POST "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
 **4f. PIN 格式錯誤：**
 
 ```bash
-curl -sL -X POST "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
+curl -sL "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
   -d '{"name":"測試乙","pin":"12","bet":80000,"nonce":"t-005"}' | python3 -m json.tool
 ```
 
@@ -1115,7 +1136,7 @@ const SETTLE_MS = Date.parse('2026-08-01T00:00:00+08:00');  // 暫時,驗完要�
 存檔並「管理部署作業 → 編輯 → 新版本 → 部署」，然後：
 
 ```bash
-curl -sL -X POST "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
+curl -sL "<URL>" -H 'Content-Type: text/plain;charset=utf-8' \
   -d '{"name":"測試甲","pin":"1234","bet":80000,"nonce":"t-006"}' | python3 -m json.tool
 ```
 
