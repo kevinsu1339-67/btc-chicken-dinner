@@ -661,7 +661,12 @@ function render(){
 
 function drawCurve(mkt, tol){
   const W = 390, H = 175, L = 30, B = 26, T = 16;
-  const lo = mkt*.88, hi = mkt*1.12, N = 23, pts = [];
+  // 橫軸必須同時包含市價與你押的價,兩邊再各留 12% 的餘裕看倍數怎麼掉。
+  // 不能寫死成 mkt±12%:滑桿範圍是 3 萬到 12 萬,押得夠遠的話
+  // 「你押這」那條線會被畫到圖外,玩家就看不到自己在哪了。
+  const pad = mkt * .12;
+  const lo = Math.min(bet, mkt) - pad, hi = Math.max(bet, mkt) + pad;
+  const N = 23, pts = [];
   for (let i = 0; i < N; i++) { const s = lo + (hi-lo)*i/(N-1); pts.push([s, multOf(bet, mkt, s, tol)]); }
   const my = Math.max(1.7, ...pts.map(p => p[1])) * 1.12;
   const x = s => L + (s-lo)/(hi-lo)*(W-L-8), y = v => H-B-(v/my)*(H-B-T), bw = (W-L-8)/N-2.5;
@@ -671,7 +676,11 @@ function drawCurve(mkt, tol){
   pts.forEach(([sv, v]) => { s += `<rect x="${x(sv)-bw/2}" y="${y(v)}" width="${bw}" height="${Math.max(0,(H-B)-y(v))}" rx="2" fill="${v>=1?'#3dffa0':'#4a341c'}"/>`; });
   s += `<line x1="${x(bet)}" y1="${T-8}" x2="${x(bet)}" y2="${H-B}" stroke="#f2b705" stroke-width="2"/>
   <text x="${x(bet)}" y="${T-11}" text-anchor="middle" font-size="9" font-weight="800" fill="#f2b705">你押這</text>`;
-  [lo, mkt, hi].forEach((v, i) => { s += `<text x="${x(v)}" y="${H-B+14}" text-anchor="${i===0?'start':i===2?'end':'middle'}" font-size="8.5" font-weight="600" fill="#c9bfa8">${fmt(v)}</text>`; });
+  // 底部刻度:兩端各一個,中間標市價。市價已不是中點,所以用它自己的 x 定位。
+  s += `<text x="${L}" y="${H-B+14}" text-anchor="start" font-size="8.5" font-weight="600" fill="#c9bfa8">${fmt(lo)}</text>`;
+  s += `<text x="${W-8}" y="${H-B+14}" text-anchor="end" font-size="8.5" font-weight="600" fill="#c9bfa8">${fmt(hi)}</text>`;
+  s += `<line x1="${x(mkt)}" y1="${H-B}" x2="${x(mkt)}" y2="${H-B+4}" stroke="#c9bfa8" stroke-width="1"/>`;
+  s += `<text x="${x(mkt)}" y="${H-B+14}" text-anchor="middle" font-size="8.5" font-weight="600" fill="#c9bfa8">市價 ${fmt(mkt)}</text>`;
   $("chart").innerHTML = s;
 }
 
