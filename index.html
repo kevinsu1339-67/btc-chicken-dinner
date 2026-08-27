@@ -265,9 +265,9 @@ nav button[aria-selected=true] .ic{background:var(--aqua-l)}
       <p class="sub">橫軸 = 9/11 實際開在多少　縱軸 = 你換到幾份餐</p>
       <svg id="chart" viewBox="0 0 390 175" role="img" aria-label="賠率分布圖"></svg>
       <div class="act">
-        <select id="name" aria-label="你的名字" style="flex:1 1 0;min-width:0"></select>
+        <select id="name" aria-label="你的名字"></select>
         <input type="text" id="pin" placeholder="PIN" inputmode="numeric" maxlength="4"
-               aria-label="4 位數 PIN" style="flex:1 1 0;min-width:0;text-align:center">
+               aria-label="4 位數 PIN" style="text-align:center">
         <button class="go" id="submit">下注</button>
       </div>
       <p class="sub" style="margin-top:8px">
@@ -398,23 +398,112 @@ function drawScatter(){
     s += `<polyline points="${klines.map(k => `${x(k.t)},${y(k.close)}`).join(' ')}" fill="none" stroke="#00BFC4" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
   }
 
-  const seen = {};
+  // 標籤防疊：先收集所有點的座標與人名，畫完點跟虛線之後再統一交給
+  // layoutLabels 排版、吐出 SVG——不要在畫點的迴圈裡順手排標籤位置，
+  // 不然沒辦法看到「全部 25 個」點之後再決定誰該讓誰。
+  const dots = [];
   S.roster.forEach(r => {
     const ms = Date.parse(r.ts); if (isNaN(ms)) return;
     const cx = x(ms), cy = y(r.bet), m = scoreOf(r);
     const isMe = isMine(r);
     s += `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${y(r.mkt)}" stroke="#3A5872" stroke-opacity=".35" stroke-dasharray="2 3"/>`;
     s += `<circle cx="${cx}" cy="${cy}" r="${isMe?6.5:5.5}" fill="${m>=1?'#00BFC4':'#FF6B5A'}" stroke="${isMe?'#FFB020':'#fff'}" stroke-width="${isMe?2.5:1.5}"/>`;
-    const bucket = Math.round(cx/30) + ':' + Math.round(cy/12);
-    const dy = seen[bucket] ? 12 : 3.5; seen[bucket] = 1;
-    s += `<text x="${cx+9}" y="${cy+dy}" font-size="9.5" font-weight="700" fill="#0E2A42">${esc(r.name)}</text>`;
+    dots.push({ cx, cy, name: r.name, isMe });
   });
+  s += layoutLabels(dots, { T, B, H, plotRight: W - R });
 
   [['8/26', T0], ['8/31', Date.parse('2026-08-31T00:00:00+08:00')],
    ['9/05', Date.parse('2026-09-05T00:00:00+08:00')], ['9/11', T1]].forEach(([lbl, ms], i) => {
     s += `<text x="${x(ms)}" y="${H-B+15}" text-anchor="${i===0?'start':i===3?'end':'middle'}" font-size="8.5" font-weight="600" fill="#3A5872">${lbl}</text>`;
   });
   $("board").innerHTML = s;
+}
+
+// ===== 標籤排版 =====
+// 25 人時下注價格大多落在市價附近幾趴，cy 會擠成窄窄一條帶，硬要
+// 垂直疊標籤（每個約 11px 高）疊不進 254px 高的繪圖區。這裡改成：
+// 1) 每個點依左右兩側分流（左右各自的可用高度等於整個繪圖區高度，
+//    等於把可用空間翻倍）；2) 同一側內先依 cy 由上而下 greedy 排開，
+//    每個至少跟前一個差 LABEL_H；3) 如果排到超出下界，再從下往上壓縮
+//    回繪圖區內；4) 標籤最終位置跟原本的點差超過 4px 就補一條細的
+//    低透明度連接線，不然讀者認不出標籤對應哪一個點。
+// 最壞情況：若同一側的標籤數 * LABEL_H 仍大於可用高度（本頁面 25 人、
+// 兩側各約 12～13 個、可用高度 246px 時不會發生），壓縮後最上面幾個
+// 標籤會被夾在同一個 minY、彼此重疊——但座標保證仍落在繪圖區內，
+// 不會跑到圖外或變成 NaN。
+function layoutLabels(dots, geo){
+  const { T, B, H, plotRight } = geo;
+  const LABEL_H = 11;
+  const minY = T + 8, maxY = H - B;
+  const EDGE = 45; // 點離繪圖區右邊界多近算「擠」，強制標籤改放左側
+
+  const mine = dots.find(d => d.isMe) || null;
+  // mine 優先分邊：先讓它挑邊，其餘的人再依「靠右邊界」強制規則、
+  // 否則依目前左右兩側已分配的數量做平衡（右側人少就給右側)。
+  const ordered = mine ? [mine, ...dots.filter(d => d !== mine)] : dots.slice();
+  const left = [], right = [];
+  ordered.forEach(d => {
+    const side = d.cx > plotRight - EDGE ? 'left' : (right.length <= left.length ? 'right' : 'left');
+    (side === 'left' ? left : right).push(d);
+  });
+
+  return packSide(right, 'right') + packSide(left, 'left');
+
+  function packSide(items, side){
+    if (!items.length) return '';
+    const anchor = side === 'right' ? 'start' : 'end';
+    const dx = side === 'right' ? 9 : -9;
+    const mineD = items.find(d => d.isMe);
+    const placed = mineD ? packAroundFixed(items, mineD) : packLinear(items);
+    let str = '';
+    placed.forEach(({ d, ly }) => {
+      if (Math.abs(ly - d.cy) > 4) {
+        str += `<line x1="${d.cx}" y1="${d.cy}" x2="${d.cx + dx}" y2="${ly}" stroke="#3A5872" stroke-opacity=".25" stroke-width=".8"/>`;
+      }
+      str += `<text x="${d.cx + dx}" y="${ly + 3.5}" text-anchor="${anchor}" font-size="9.5" font-weight="700" fill="#0E2A42">${esc(d.name)}</text>`;
+    });
+    return str;
+  }
+
+  // 一般貪婪排版：依 cy 由上而下排開，擠出下界時再從下往上壓縮回來。
+  function packLinear(items){
+    const sorted = items.slice().sort((a, b) => a.cy - b.cy);
+    const ys = []; let prev = -Infinity;
+    sorted.forEach(d => { const ly = Math.max(d.cy, prev + LABEL_H); ys.push(ly); prev = ly; });
+    if (ys.length && ys[ys.length - 1] > maxY) {
+      ys[ys.length - 1] = maxY;
+      for (let i = ys.length - 2; i >= 0; i--) ys[i] = Math.min(ys[i], ys[i + 1] - LABEL_H);
+    }
+    return sorted.map((d, i) => ({ d, ly: Math.min(maxY, Math.max(minY, ys[i])) }));
+  }
+
+  // mine 優先：先把 mine 釘在自己理想的 y（夾在繪圖區內），其餘依 cy
+  // 分成「在它之上」跟「在它之下」兩組，各自朝遠離 mine 的方向 greedy
+  // 排開，這樣 mine 的標籤位置不會被其他人擠掉。
+  function packAroundFixed(items, mineD){
+    const fixedY = Math.min(maxY, Math.max(minY, mineD.cy));
+    const above = items.filter(d => d !== mineD && d.cy <= mineD.cy).sort((a, b) => b.cy - a.cy);
+    const below = items.filter(d => d !== mineD && d.cy > mineD.cy).sort((a, b) => a.cy - b.cy);
+
+    const aboveYs = []; let prev = fixedY;
+    above.forEach(d => { const ly = Math.min(d.cy, prev - LABEL_H); aboveYs.push(ly); prev = ly; });
+    if (aboveYs.length && aboveYs[aboveYs.length - 1] < minY) {
+      aboveYs[aboveYs.length - 1] = minY;
+      for (let i = aboveYs.length - 2; i >= 0; i--) aboveYs[i] = Math.max(aboveYs[i], aboveYs[i + 1] + LABEL_H);
+    }
+
+    const belowYs = []; prev = fixedY;
+    below.forEach(d => { const ly = Math.max(d.cy, prev + LABEL_H); belowYs.push(ly); prev = ly; });
+    if (belowYs.length && belowYs[belowYs.length - 1] > maxY) {
+      belowYs[belowYs.length - 1] = maxY;
+      for (let i = belowYs.length - 2; i >= 0; i--) belowYs[i] = Math.min(belowYs[i], belowYs[i + 1] - LABEL_H);
+    }
+
+    const result = [{ d: mineD, ly: fixedY }];
+    above.forEach((d, i) => result.push({ d, ly: Math.min(maxY, Math.max(minY, aboveYs[i])) }));
+    below.forEach((d, i) => result.push({ d, ly: Math.min(maxY, Math.max(minY, belowYs[i])) }));
+    return result;
+  }
 }
 
 function drawList(){
@@ -571,7 +660,7 @@ async function loadKlines(){
     // close 剛好兩家都在索引 4。
     klines = raw
       .map(k => ({ t: Number(k[0]) * 1000, close: Number(k[4]) }))
-      .filter(k => isFinite(k.t) && isFinite(k.close) && k.close > 0 && k.t >= T0)
+      .filter(k => isFinite(k.t) && isFinite(k.close) && k.close > 0 && k.t >= T0 && k.t <= T1)
       .sort((a, b) => a.t - b.t);
   } catch (err) {
     // 抓不到就不畫走勢線,其餘功能照常。
