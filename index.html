@@ -436,7 +436,7 @@ async function refresh(){
     if (!bet) bet = Math.round(S.mkt);
     conn(S.src === 'fallback'
       ? '市價暫時抓不到,顯示的是最後一次成功的價格。'
-      : `已同步 · 市價 $${fmt(S.mkt)} · 剩 ${S.daysLeft} 天 · 容許 ±${S.tol}%`);
+      : `已同步 · 市價 $${fmt(S.mkt)} · 剩 ${S.daysLeft} 天`);
     renderBoard(); render();
   } catch (err) {
     conn('連線不到伺服器,畫面可能不是最新的。' + err.message, true);
