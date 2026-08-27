@@ -155,6 +155,90 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;bac
 }
 .tabbar button .ico{font-size:19px}
 .tabbar button.active{color:var(--gold)}
+
+/* ---------- 下注頁:1. 這是誰(名單下拉 + PIN,兩者等寬,沿用之前
+   index.html 已驗證過的等寬做法;按鈕保留自己的自然寬度) ---------- */
+.ident-row{display:flex;gap:9px}
+select{
+  width:100%;font-family:var(--font-body);font-size:15px;font-weight:700;color:var(--cream);
+  background:var(--bg-card-hi);border:1px solid var(--wood-line);border-radius:10px;padding:10px 9px;
+  min-height:44px;
+}
+.ident-row select,.ident-row input{
+  flex:1 1 0;min-width:0;font-family:var(--font-body);font-size:15px;font-weight:600;padding:12px;
+  border:1px solid var(--wood-line);border-radius:11px;background:var(--bg-card-hi);color:var(--cream);
+  min-height:44px;
+}
+.ident-row input::placeholder{color:var(--cream-dim);text-align:center}
+.hint-text{font-size:11.5px;color:var(--cream-dim);line-height:1.7;margin-top:10px}
+.msg{font-size:11.5px;font-weight:600;margin-top:9px;min-height:16px;line-height:1.7}
+
+/* ---------- 下注頁:2. 你的預測價(取自參考稿) ---------- */
+.predict-label{font-size:12.5px;color:var(--cream-dim);margin-bottom:6px}
+.predict-input{
+  width:100%;font-family:var(--font-mono);font-size:30px;font-weight:700;color:var(--gold);
+  background:var(--bg-card-hi);border:1px solid var(--gold-dim);border-radius:12px;
+  padding:12px 10px;text-align:center;margin:10px 0 6px;
+}
+.quick-row{display:flex;gap:6px;margin-bottom:10px}
+.quick-row button{flex:1;background:var(--bg-card-hi);border:1px solid var(--wood-line);color:var(--cream);
+  border-radius:8px;padding:9px 0;font-size:13px;min-height:44px}
+.quick-row button:active{background:var(--wood-line)}
+.day-badge{display:inline-block;margin-top:8px;font-size:12px;color:var(--gold);font-family:var(--font-mono);
+  background:var(--bg-card-hi);border:1px solid var(--wood-line);padding:4px 10px;border-radius:8px}
+
+.odds-preview{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.odds-row{display:flex;justify-content:space-between;font-size:12.5px;border-bottom:1px dashed var(--wood-line);padding-bottom:6px}
+.odds-row:last-child{border-bottom:none;padding-bottom:0}
+.odds-row .v{font-family:var(--font-mono);font-weight:700;color:var(--gold)}
+.odds-row.hero{background:var(--bg-card-hi);border-radius:8px;padding:8px 10px;border-bottom:none}
+.odds-row.hero .v{font-size:18px;color:var(--neon-green)}
+
+.primary-btn{
+  width:100%;padding:14px 0;border-radius:12px;border:none;background:var(--gold);
+  color:#221609;font-weight:700;font-size:15px;min-height:48px;
+  box-shadow:0 4px 14px rgba(242,183,5,.35);
+  transition:transform .08s ease,box-shadow .08s ease;
+}
+.primary-btn:active{transform:scale(.97);box-shadow:0 2px 6px rgba(242,183,5,.25)}
+.primary-btn:disabled{background:var(--wood-line);color:var(--cream-dim);box-shadow:none}
+.ghost-btn{
+  width:100%;padding:12px 0;border-radius:12px;border:1px solid var(--wood-line);background:transparent;
+  color:var(--cream-dim);font-size:13px;min-height:44px;margin-top:8px;
+}
+
+/* ---------- 下注確認彈窗(取自參考稿 showConfirmModal) ---------- */
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-box{
+  width:100%;max-width:360px;background:var(--bg-panel);border:2px solid var(--gold-dim);border-radius:16px;
+  padding:20px;box-shadow:var(--shadow);max-height:86vh;overflow-y:auto;
+}
+.modal-box h3{font-family:var(--font-display);font-weight:400;color:var(--gold);font-size:18px;margin:0 0 12px;text-align:center}
+.modal-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--wood-line)}
+.modal-row .v{font-family:var(--font-mono);color:var(--gold);font-weight:700}
+.modal-actions{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+
+.trial-label{font-size:12px;color:var(--cream-dim);text-align:center;margin:14px 0 2px}
+.trial-price{font-family:var(--font-mono);font-size:28px;font-weight:700;color:var(--gold);text-align:center;margin-bottom:4px}
+.trial-range-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--cream-dim);margin-top:4px}
+.trial-range-labels span:nth-child(2){color:var(--gold);font-weight:700}
+.modal-formula{
+  margin-top:8px;background:#0f0906;border:1px dashed var(--gold-dim);border-radius:10px;
+  padding:10px 12px;font-family:var(--font-mono);font-size:11px;line-height:1.7;color:var(--cream);
+}
+.modal-formula .f-line{margin-bottom:7px}
+.modal-formula .f-line b{color:var(--gold);font-weight:700}
+.modal-formula .f-line.result{color:var(--neon-green);font-weight:700;background:rgba(61,255,160,.08);padding:7px 8px;border-radius:6px}
+.modal-formula .f-note{color:var(--cream-dim);font-size:10.5px;margin-top:6px;line-height:1.6}
+
+.result-card{background:#0f0906;border:1px solid var(--wood-line);border-radius:12px;padding:16px 14px;text-align:center;margin:12px 0 4px}
+.result-mult{font-family:var(--font-mono);font-weight:700;font-size:34px}
+.result-mult.win{color:var(--neon-green);text-shadow:0 0 14px rgba(61,255,160,.55)}
+.result-mult.lose{color:var(--neon-red);text-shadow:0 0 14px rgba(255,59,92,.45)}
+.result-chickens{font-size:26px;margin:4px 0}
+.result-verdict{font-size:12.5px;color:var(--cream-dim);margin-bottom:8px}
+.result-breakdown{border-top:1px dashed var(--wood-line);padding-top:8px;font-size:11.5px;color:var(--cream-dim);line-height:1.9}
+.result-breakdown b{color:var(--gold);font-weight:700}
 </style>
 
 <div id="app"></div>
@@ -196,6 +280,14 @@ const state = {
   assumedSettle: null, // 戰況頁「假設結算價」滑桿目前值
   connMsg: '連線中…',
   connBad: false,
+
+  // ---- 下注頁(Task B) ----
+  bet: { name: '', pin: '', predict: null }, // 下注頁暫存(名字/PIN/預測價)
+  mine: null,          // 目前選的名字若已出現在 roster 裡，用來切換「下注／改注」文字
+  betMsg: '',          // 下注頁提示訊息
+  betMsgBad: false,
+  betBusy: false,      // 送出進行中，避免重複點擊
+  pendingBet: null,     // 上次送出失敗、暫存在 localStorage 的下注(見 boot())
 };
 
 /* ---------------------------------------------------------------------
@@ -251,6 +343,7 @@ function render() {
   `;
   bindGlobalEvents();
   if (state.tab === 'home') afterHomeRender();
+  if (state.tab === 'bet') afterBetRender();
 }
 
 function renderTopbar() {
@@ -496,12 +589,352 @@ function drawScatterChart() {
   });
 }
 
-/* ---------------- 下注(Task B 才會實作,這裡先放占位) ---------------- */
+/* ---------------- 下注(Task B) ----------------
+   版面沿用參考稿「2. 你的預測價」區塊(大數字、滑桿、微調按鈕、賠率預覽),
+   「1. 這是誰」則依主辦人要求換成名單下拉 + PIN,取代參考稿的員工編號輸入。
+   送出流程(submitBet／resend／改注文字切換／下拉名單)是從 92493fd 版
+   index.html 逐字搬過來的行為,那個版本經過四輪 code review 才把這幾處
+   邊界情況修對,這裡不重新發明,只是把 DOM 操作風格改寫成本檔案 Task A
+   建立的「render() 回傳字串樣板」寫法。 */
+
+// 名字下拉選項:第一項是空白占位,逼玩家主動選,避免有人沒注意就用了
+// 名單第一位的名字下注。對應 92493fd 版的 fillNames()。
+function nameOptionsHtml() {
+  let html = '<option value="">— 選你的名字 —</option>';
+  ROSTER.forEach(n => {
+    html += `<option value="${esc(n)}" ${state.bet.name === n ? 'selected' : ''}>${esc(n)}</option>`;
+  });
+  return html;
+}
+
+// 依下拉選單目前選的名字,判斷這個人是不是已經在 roster(伺服器資料)裡,
+// 決定送出按鈕要顯示「下注」還是「改注」。用正規化後的名字比對(normalizeName,
+// 來自 src/lib.js),不能用原始字串相等——否則「阿明」跟「 阿明 」會被當成
+// 兩個人,選了自己的名字卻還是顯示「下注」。逐字對應 92493fd 版的 updateMine()。
+function updateMine(selectedName) {
+  if (!selectedName) { state.mine = null; return; }
+  state.mine = { name: selectedName };
+  const found = S.roster.some(r => normalizeName(r.name) === normalizeName(selectedName));
+  if (!found) state.mine = null;
+}
+
+// 🍗 x 份的顯示用小工具(純顯示,不是計分公式)。
+function drum(k) {
+  const whole = Math.floor(k), frac = k - whole;
+  let s = '🍗'.repeat(Math.max(0, whole));
+  if (frac > 0.05) s += `<span style="opacity:${Math.max(.35, frac).toFixed(2)}">🍗</span>`;
+  return s || '—';
+}
+
 function renderBetContent() {
+  const mkt = S.mkt, tol = S.tol;
+  const predict = state.bet.predict != null ? state.bet.predict : Math.round(mkt || 0);
+  // 「結算價剛好等於預測價」情境:誤差為 0,用 multOf 本身算,不重寫公式。
+  const hitMult = mkt ? multOf(predict, mkt, predict, tol) : 0;
+  const btnLabel = state.mine ? '改注' : '下注';
+  const submitDisabled = !mkt || S.closed || state.betBusy;
+
+  // 訊息區優先順序:上次沒送出成功的暫存 > 已截止 > 一般提示訊息。
+  let msgHtml = '';
+  if (state.pendingBet) {
+    msgHtml = `
+      <div class="msg" style="color:var(--neon-red)">
+        你有一筆 $${fmtMoney(state.pendingBet.bet)} 沒送出成功。
+        <button class="ghost-btn" id="resend-bet" style="width:auto;display:inline-block;margin-top:8px;margin-right:6px;padding:8px 14px">重送</button>
+        <button class="ghost-btn" id="drop-bet" style="width:auto;display:inline-block;margin-top:8px;padding:8px 14px">丟掉</button>
+      </div>`;
+  } else if (S.closed) {
+    msgHtml = `<div class="msg" id="bet-msg" style="color:var(--neon-red)">已於 9/11 00:00 截止,不能再改了。</div>`;
+  } else if (state.betMsg) {
+    msgHtml = `<div class="msg" id="bet-msg" style="color:${state.betMsgBad ? 'var(--neon-red)' : 'var(--gold)'}">${esc(state.betMsg)}</div>`;
+  } else {
+    msgHtml = `<div class="msg" id="bet-msg"></div>`;
+  }
+
   return `
+  <div class="section"><div class="section-title">🍗 我要下注</div></div>
+
   <div class="section">
-    <div class="card"><div class="empty-note">下注功能整理中,敬請期待。</div></div>
-  </div>`;
+    <div class="section-title">1. 這是誰</div>
+    <div class="card">
+      <div class="ident-row">
+        <select id="name" aria-label="你的名字">${nameOptionsHtml()}</select>
+        <input type="text" id="pin" placeholder="PIN" inputmode="numeric" maxlength="6"
+               aria-label="4 到 6 位數 PIN" value="${esc(state.bet.pin || '')}">
+      </div>
+      <button class="primary-btn" id="submit-bet" style="margin-top:10px" ${submitDisabled ? 'disabled' : ''}>${btnLabel}</button>
+      <p class="hint-text">首次下注請設定並記住 4 到 6 位數字 PIN 碼，若之後要改注需填入才能改注。</p>
+      ${msgHtml}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">2. 你的預測價(9/11 結算價)</div>
+    <div class="card">
+      <div class="predict-label">我預測 9/11 BTC 價格為...</div>
+      <input type="text" inputmode="numeric" class="predict-input" id="predict-input" value="${fmtMoney(predict)}">
+      <input type="range" id="predict-slider" min="${SLIDER_LO}" max="${SLIDER_HI}" step="100" value="${Math.round(predict)}" aria-label="調整預測價格">
+      <!-- 滑桿範圍固定在 3 萬到 12 萬,市價不再是滑桿中點,所以中間直接把
+           市價標出來當參考點——否則玩家看不出自己拖到的位置離市價多遠。
+           沿用 92493fd 版 drawCurve() 旁的註解與做法。 -->
+      <div class="ends">
+        <span>${fmtMoney(SLIDER_LO)}</span>
+        <span>市價 $${mkt ? fmtMoney(mkt) : '—'}</span>
+        <span>${fmtMoney(SLIDER_HI)}</span>
+      </div>
+      <div class="quick-row">
+        <button type="button" data-delta="-2000">−2000</button>
+        <button type="button" data-delta="-500">−500</button>
+        <button type="button" data-delta="500">+500</button>
+        <button type="button" data-delta="2000">+2000</button>
+      </div>
+      <div class="day-badge" id="days-badge">今天市價 $${mkt ? fmtMoney(mkt) : '—'} · 容許值 ±${tol || 0}% · 距結算還有 ${S.daysLeft || 0} 天</div>
+      <div class="odds-preview">
+        <div class="odds-row hero"><span>結算價「剛好等於」你的預測</span><span class="v" id="hit-mult">${hitMult.toFixed(2)}×</span></div>
+      </div>
+    </div>
+  </div>
+  `;
+}
+
+function syncPredict(num) {
+  num = Math.min(SLIDER_HI, Math.max(SLIDER_LO, num || 0));
+  state.bet.predict = num;
+  const predictInput = $('predict-input');
+  const predictSlider = $('predict-slider');
+  if (predictInput) predictInput.value = num ? fmtMoney(num) : '';
+  if (predictSlider) predictSlider.value = num;
+  updateBetDynamic();
+}
+
+/* 只更新下注頁裡「不是使用者正在拖拉/輸入的那個元素」,呼叫時機:
+   (a) 30 秒輪詢／視窗恢復可見時的 refresh() —— S.mkt、S.tol、S.daysLeft
+       可能變了,但不能把使用者正在打字的 name/pin/predict-input 整個
+       換掉,否則輸入會被中斷(沿用戰況頁 updateHomeDynamic() 的做法);
+   (b) 使用者自己拖滑桿/點微調按鈕時,即時更新賠率預覽。
+   所有元素都用 if(el) 保護——使用者在「戰況」分頁時這些 id 不存在。 */
+function updateBetDynamic() {
+  const badge = $('days-badge');
+  if (badge) badge.textContent = `今天市價 $${S.mkt ? fmtMoney(S.mkt) : '—'} · 容許值 ±${S.tol || 0}% · 距結算還有 ${S.daysLeft || 0} 天`;
+
+  const hitEl = $('hit-mult');
+  if (hitEl) {
+    const predict = state.bet.predict;
+    const m = (S.mkt && predict) ? multOf(predict, S.mkt, predict, S.tol) : 0;
+    hitEl.textContent = m.toFixed(2) + '×';
+  }
+
+  const btn = $('submit-bet');
+  if (btn) {
+    btn.textContent = state.mine ? '改注' : '下注';
+    btn.disabled = !S.mkt || S.closed || state.betBusy;
+  }
+
+  const msgEl = $('bet-msg');
+  if (msgEl && S.closed) {
+    msgEl.textContent = '已於 9/11 00:00 截止,不能再改了。';
+    msgEl.style.color = 'var(--neon-red)';
+  }
+}
+
+function afterBetRender() {
+  const nameSel = $('name');
+  if (nameSel) {
+    nameSel.addEventListener('change', () => {
+      state.bet.name = nameSel.value;
+      updateMine(nameSel.value);
+      render(); // 選擇的名字要換算「下注／改注」文字，整頁重繪一次沒關係(離散事件，非連續拖曳)
+    });
+  }
+
+  const pinInput = $('pin');
+  if (pinInput) {
+    pinInput.addEventListener('input', e => {
+      const digits = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+      e.target.value = digits;
+      state.bet.pin = digits;
+    });
+  }
+
+  const predictInput = $('predict-input');
+  if (predictInput) {
+    predictInput.addEventListener('input', e => {
+      const digits = e.target.value.replace(/[^0-9]/g, '');
+      const num = Math.min(SLIDER_HI, Math.max(SLIDER_LO, Number(digits) || 0));
+      state.bet.predict = num;
+      e.target.value = num ? num.toLocaleString('en-US') : '';
+      const slider = $('predict-slider');
+      if (slider) slider.value = num;
+      updateBetDynamic();
+    });
+  }
+
+  const predictSlider = $('predict-slider');
+  if (predictSlider) {
+    predictSlider.addEventListener('input', e => syncPredict(Number(e.target.value)));
+  }
+
+  document.querySelectorAll('.quick-row button').forEach(btn => {
+    btn.addEventListener('click', () => syncPredict((state.bet.predict || 0) + Number(btn.dataset.delta)));
+  });
+
+  $('submit-bet')?.addEventListener('click', onSubmitBet);
+
+  $('resend-bet')?.addEventListener('click', () => submitBet(state.pendingBet));
+  $('drop-bet')?.addEventListener('click', () => {
+    api.clearPending();
+    state.pendingBet = null;
+    render();
+  });
+
+  updateBetDynamic();
+}
+
+function onSubmitBet() {
+  const name = state.bet.name || '';
+  const pin = (state.bet.pin || '').trim();
+  state.betMsgBad = true;
+
+  if (!name) { state.betMsg = '先從選單選你的名字。'; render(); $('name')?.focus(); return; }
+  // PIN 檢查與伺服器同一套規則(/^\d{4,6}$/),失敗訊息用繁中講清楚。
+  if (!/^\d{4,6}$/.test(pin)) { state.betMsg = 'PIN 要 4 到 6 位數字。'; render(); $('pin')?.focus(); return; }
+  const bet = state.bet.predict;
+  if (!bet || bet <= 0) { state.betMsg = '預測價不能是 0 或空白,請輸入一個合理的數字。'; render(); return; }
+  if (!S.mkt) { state.betMsg = '抓不到市價,請稍後再試一次。'; render(); return; }
+
+  showConfirmModal({ name, pin, bet });
+}
+
+/* ===== 送出下注(逐字對應 92493fd 版的 submitBet,只有 DOM 操作風格改成
+   本檔案的 state + render() 寫法):
+   - 每個失敗路徑都要在 finally 裡明確恢復按鈕,不能只靠 render()——
+     這是舊版經過 code review 找出來的 bug:當時的 render() 在 S.mkt
+     為 0 時會提前 return，恢復按鈕的程式碼永遠不會被跑到。本檔案的
+     render() 不會提前 return(一定會產生完整的下注頁 HTML)，但為了不
+     讓行為出現任何一絲差異，仍然在 finally 裡明確設一次按鈕狀態，
+     再呼叫 render()。
+   - resend 時傳進來的 payload(pending)要原封不動送給 api.placeBet，
+     讓 src/api.js 沿用同一個 nonce——伺服器的冪等檢查靠的就是這個
+     nonce 沒被換掉，絕對不能在這裡重新產生一個。 ===== */
+async function submitBet(payload) {
+  state.betBusy = true;
+  const btn = $('submit-bet');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await api.placeBet(payload);
+    if (!res.ok) {
+      // 伺服器有回應但拒絕:輸入全部保留,讓玩家改完再送。
+      state.betMsg = res.message || ('送出被拒:' + res.reason);
+      state.betMsgBad = true;
+      return false;
+    }
+    api.saveMe(payload.name, payload.pin);
+    state.bet.name = payload.name;
+    state.bet.pin = payload.pin;
+    state.pendingBet = null;
+    updateMine(payload.name);
+    state.betMsgBad = false;
+    state.betMsg = res.duplicate
+      ? '這筆剛剛已經送出過了,沒有重複記錄。'
+      : `${payload.name} 押 $${fmtMoney(payload.bet)} 已入場(第 ${res.seq} 次送出)。截止前還可以再改。`;
+    await refresh();
+    return true;
+  } catch (err) {
+    // 送不出去:api.js 已經把這筆(含原本的 nonce)暫存進 localStorage,
+    // 這裡重新讀一次讓畫面上的「重送」按鈕跟儲存的內容保持一致。
+    state.pendingBet = api.loadPending();
+    state.betMsgBad = true;
+    state.betMsg = '送不出去(' + err.message + ')。已幫你存起來,連上網後按一次「重送」。';
+    return false;
+  } finally {
+    state.betBusy = false;
+    // 明確還原按鈕狀態,再呼叫 render()——見上方函式註解。
+    if (btn) btn.disabled = state.betBusy || S.closed;
+    render();
+  }
+}
+
+/* ===== 下注確認彈窗(取自參考稿 showConfirmModal,含拖曳試算滑桿):
+   - 拿掉「下注日」欄位,改成註明日期由伺服器蓋章
+   - 標題與內文註明截止前都還能再改注
+   - 「送出下注」呼叫 submitBet();「取消」單純關掉彈窗,不送出任何東西 ===== */
+function showConfirmModal(record) {
+  const mkt = S.mkt, tol = S.tol;
+  const sliderMin = Math.round(mkt * 0.75), sliderMax = Math.round(mkt * 1.25);
+  const initial = mkt;
+
+  const mask = document.createElement('div');
+  mask.className = 'modal-mask';
+  mask.innerHTML = `
+    <div class="modal-box">
+      <h3>🍗 確認下注(截止前都能再改)</h3>
+      <div class="modal-row"><span>名字</span><span class="v">${esc(record.name)}</span></div>
+      <div class="modal-row"><span>你的預測價</span><span class="v">$${fmtMoney(record.bet)}</span></div>
+      <div class="modal-row"><span>下注日</span><span class="v">送出時由伺服器自動蓋章</span></div>
+
+      <div class="trial-label">拖拉試算 9/11 BTC 各價位,你的餐點倍數是多少</div>
+      <div class="trial-price" id="modal-settle-val">$${fmtMoney(initial)}</div>
+      <input type="range" id="modal-settle-slider" min="${sliderMin}" max="${sliderMax}" value="${Math.round(initial)}" step="10" aria-label="試算結算價">
+      <div class="trial-range-labels"><span>$${fmtMoney(sliderMin)}</span><span>今日市價</span><span>$${fmtMoney(sliderMax)}</span></div>
+
+      <div class="result-card">
+        <div class="result-mult" id="result-mult">--×</div>
+        <div class="result-chickens" id="result-chickens"></div>
+        <div class="result-verdict" id="result-verdict"></div>
+        <div class="result-breakdown" id="result-breakdown"></div>
+      </div>
+
+      <div class="modal-formula">
+        <div class="f-line">😤 <b>膽量(%)</b> = |預測價 − 下注當天市價| ÷ 下注當天市價 × 100</div>
+        <div class="f-line">🎯 <b>誤差(%)</b> = |預測價 − 結算價| ÷ 結算價 × 100</div>
+        <div class="f-line">📏 <b>容許值</b> = round(6 × √距結算天數)</div>
+        <div class="f-line result">🍗 <b>餐點倍數</b> = max(0, (1 + 膽量÷10) × (1 − 誤差÷容許值))</div>
+        <div class="f-note">算出負數就當 0。截止前(9/11 00:00 UTC+8)可以隨時回來改注,計分只看最新一筆,但每次送出都會留下紀錄。</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="primary-btn" id="confirm-ok">送出下注</button>
+        <button class="ghost-btn" id="confirm-cancel">取消,返回修改</button>
+      </div>
+    </div>`;
+  document.body.appendChild(mask);
+
+  // 試算用的膽量／倍數一律呼叫 gutsOf/multOf(src/lib.js),不重寫公式、不留
+  // 第二份算式。原參考稿的拆解文字(膽量加分到多少、誤差保留多少)需要
+  // multOf 內部沒有對外暴露的中繼值,若要秀出那兩個數字就得在這裡重新兜一次
+  // (1+膽量/10)、(1-誤差/容許值),等於是公式的第二份副本,因此拆解說明改成
+  // 只展示 gutsOf/multOf 兩個函式各自算出來的值。
+  const updateModalMult = (settlePrice) => {
+    const courage = gutsOf(record.bet, mkt);
+    const mult = multOf(record.bet, mkt, settlePrice, tol);
+
+    const el = document.getElementById('result-mult');
+    el.textContent = mult.toFixed(2) + '×';
+    el.className = 'result-mult ' + (mult >= 1 ? 'win' : 'lose');
+
+    document.getElementById('result-chickens').innerHTML = drum(mult);
+
+    document.getElementById('result-verdict').textContent =
+      mult >= 1 ? '份餐點 — 有賺到' : (mult > 0 ? '份餐點 — 有賠到' : '份餐點 — 槓龜,一場空');
+
+    document.getElementById('result-breakdown').innerHTML =
+      `膽量 ${courage.toFixed(2)}%,容許值 ±${tol}%<br>` +
+      `餐點倍數 = <b>${mult.toFixed(2)}</b>`;
+  };
+  updateModalMult(initial);
+  document.getElementById('modal-settle-slider').addEventListener('input', e => {
+    const v = Number(e.target.value);
+    document.getElementById('modal-settle-val').textContent = '$' + fmtMoney(v);
+    updateModalMult(v);
+  });
+
+  mask.querySelector('#confirm-ok').addEventListener('click', () => {
+    document.body.removeChild(mask);
+    submitBet({ name: record.name, pin: record.pin, bet: Number(record.bet) });
+  });
+  mask.querySelector('#confirm-cancel').addEventListener('click', () => {
+    document.body.removeChild(mask);
+  });
 }
 
 /* ---------------------------------------------------------------------
@@ -525,6 +958,9 @@ async function refresh() {
     S = s;
     state.bets = betsFromRoster(S.roster);
     if (state.assumedSettle == null) state.assumedSettle = Math.round(S.mkt);
+    // 下注頁的預測價初值 = 市價,只在第一次抓到市價時設定一次,
+    // 之後就是使用者自己的輸入,不能被輪詢覆寫掉。
+    if (state.bet.predict == null) state.bet.predict = Math.round(S.mkt || 0);
     state.connMsg = S.src === 'fallback'
       ? '市價暫時抓不到,顯示的是最後一次成功的價格。'
       : `已同步 · 市價 $${fmtMoney(S.mkt)} · 剩 ${S.daysLeft} 天`;
@@ -534,6 +970,7 @@ async function refresh() {
     state.connBad = true;
   }
   updateHomeDynamic();
+  updateBetDynamic();
 }
 
 /* ===== 走勢線:向 Coinbase Exchange 取,唯讀公開資料,不影響計分。
@@ -561,7 +998,15 @@ async function loadKlines() {
 
 /* ===== 啟動 ===== */
 (async function boot() {
+  // 還原上次記住的名字/PIN(src/api.js 的 localStorage 存取,經 saveMe/loadMe),
+  // 並讀出上次沒送出成功而暫存的下注紀錄(pendingBet,見 renderBetContent 的
+  // 「重送／丟掉」按鈕)。
+  const saved = api.loadMe();
+  if (saved) { state.bet.name = saved.name; state.bet.pin = saved.pin; }
+  state.pendingBet = api.loadPending();
+
   await Promise.all([refresh(), loadKlines()]);
+  if (saved) updateMine(saved.name);
   render();
 
   // 戰況頁每 30 秒同步一次。切到背景時停掉,免得手機一直耗電。
