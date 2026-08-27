@@ -10,18 +10,6 @@
         "8000"
       ],
       "port": 8000
-    },
-    {
-      "name": "design-preview",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": [
-        "-m",
-        "http.server",
-        "8001",
-        "--directory",
-        "/Users/suweixiang/Downloads/WINNER WINNER CHICKEN DINNER"
-      ],
-      "port": 8001
     }
   ]
 }
