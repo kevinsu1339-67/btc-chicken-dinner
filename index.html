@@ -268,10 +268,8 @@ nav button[aria-selected=true] .ic{background:rgba(242,183,5,.18)}
       <div class="scn">
         <div><span class="lbl">假設 9/11 開在</span>
           <div class="big">$<span id="sv"></span></div></div>
-        <div style="text-align:right"><span class="lbl">主辦盈虧</span>
-          <div class="num" id="sDiff">—</div></div>
       </div>
-      <input type="range" id="settle" min="68000" max="94000" step="250" aria-label="假設結算價">
+      <input type="range" id="settle" min="30000" max="120000" step="250" aria-label="假設結算價">
       <div class="ends"><span id="slo">—</span><span>拉動看排名怎麼洗牌</span><span id="shi">—</span></div>
     </div>
 
@@ -319,8 +317,7 @@ nav button[aria-selected=true] .ic{background:rgba(242,183,5,.18)}
       <div class="rule-divider"></div>
       <div class="rule-notes">
         結算 = <b>Coinbase Exchange BTC-USD</b>,2026/09/11 00:00(UTC+8)開盤價。<br>
-        僅限 <b>25 位登記在案的玩家</b>,以「名字 + 4 到 6 位數 PIN」核對身分,不接受名單外的名字。<br>
-        截止前可以隨時改注,<b>每次送出都會留下紀錄,但計分只看最新一筆</b>。
+
       </div>
     </div>
   </div>
@@ -330,7 +327,7 @@ nav button[aria-selected=true] .ic{background:rgba(242,183,5,.18)}
     <div class="card">
       <div class="f3" style="grid-template-columns:1fr 1fr">
         <div><span class="lbl">當下市價</span><div class="num" style="padding-top:7px">$<span id="mkt">—</span></div></div>
-        <div><span class="lbl">容許誤差</span><div class="num" style="padding-top:7px">±<span id="tol">—</span><small>%</small></div></div>
+        <div><span class="lbl">膽量 偏離市價</span><div class="num" style="padding-top:7px"><span id="guts">—</span><small>%</small></div></div>
       </div>
       <p class="sub" style="margin-top:10px">距 9/11 還有 <b id="dleft"></b> 天。越早下注,容許誤差越寬 — 這是早鳥的優勢。</p>
     </div>
@@ -339,7 +336,7 @@ nav button[aria-selected=true] .ic{background:rgba(242,183,5,.18)}
       <span class="lbl" style="text-align:center">你賭 9/11 開在</span>
       <input class="betin" id="bet" type="text" inputmode="numeric" aria-label="預測價格">
       <input type="range" id="slider" aria-label="調整預測價格">
-      <div class="ends"><span id="rlo"></span><span>當下市價</span><span id="rhi"></span></div>
+      <div class="ends"><span id="rlo"></span><span>市價 $<span id="rmid">—</span></span><span id="rhi"></span></div>
       <div class="nudge">
         <button data-d="-2000">−2000</button><button data-d="-500">−500</button>
         <button data-d="500">+500</button><button data-d="2000">+2000</button>
@@ -350,16 +347,6 @@ nav button[aria-selected=true] .ic{background:rgba(242,183,5,.18)}
         <div class="dr" id="plates">🍗</div>
         <div class="kx" id="kmax">1.00×</div>
         <div class="cap">若 9/11 剛好開在你押的價</div>
-        <div class="risks">
-          <div>押錯 2%<b id="m2">—</b></div>
-          <div>押錯 5%<b id="m5">—</b></div>
-          <div>押錯 8%<b id="m8">—</b></div>
-        </div>
-      </div>
-
-      <div class="f3" style="margin-top:14px;grid-template-columns:1fr 1fr">
-        <div><span class="lbl">膽量 偏離市價</span><div class="num" id="guts"></div></div>
-        <div><span class="lbl">歸零門檻</span><div class="num" id="zero"></div></div>
       </div>
     </div>
 
@@ -396,7 +383,10 @@ nav button[aria-selected=true] .ic{background:rgba(242,183,5,.18)}
 <script src="src/api.js"></script>
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbz96sNqUTzyxmVymm9G1R0TYAcYjYX2Vb5wxM-ZswwGAez3SVYdXQvs8i695XrRYODw/exec';
-const TARGET = 25;                            // 參加人數，只影響「已下注 N/25」的顯示
+// 兩個滑桿共用的範圍。刻意用固定值而非隨市價浮動,讓拖曳的尺度不會每次
+// 重新整理都變。範圍大到單靠拖曳無法精調,所以下注頁保留了 ±500／±2000
+// 的按鈕與可直接輸入的數字欄位。
+const SLIDER_LO = 30000, SLIDER_HI = 120000;
 const T0 = Date.parse('2026-08-26T00:00:00+08:00');  // 圖表時間軸起點
 const T1 = SETTLE_MS;                                 // 來自 src/lib.js
 
@@ -459,25 +449,20 @@ function scoreOf(r){ return multOf(r.bet, r.mkt, settle, r.tol); }
 function renderBoard(){
   // 滑桿範圍跟著實際市價走,不能寫死——BTC 價格可能整個落在寫死的區間外。
   if (S.mkt) {
-    const slo = Math.round(S.mkt*.85), shi = Math.round(S.mkt*1.15);
+    const slo = SLIDER_LO, shi = SLIDER_HI;
     settle = Math.min(shi, Math.max(slo, settle));
     Object.assign($("settle"), { min: slo, max: shi, step: 250 });
     $("slo").textContent = fmt(slo); $("shi").textContent = fmt(shi);
   }
   $("sv").textContent = fmt(settle);
   $("settle").value = settle;
-  const N = S.roster.length;
-  const tot = S.roster.reduce((a, r) => a + scoreOf(r), 0);
   $("pMkt").textContent = S.mkt ? '$' + fmt(S.mkt) : '—';
   const cap = $("pMktCap");
   const stale = S.src === 'fallback';
   cap.textContent = stale
     ? '行情暫時抓不到,這是最後一次成功的價格'
-    : `Coinbase Exchange · 已下注 ${N}/${TARGET} 人`;
+    : 'Coinbase Exchange';
   cap.classList.toggle('stale', stale);
-  const d = N - tot;
-  $("sDiff").innerHTML = (d >= 0 ? "+" : "") + d.toFixed(1) + "<small> 份</small>";
-  $("sDiff").style.color = d >= 0 ? "var(--aqua-d)" : "var(--coral)";
   drawScatter(); drawList();
 }
 
@@ -649,26 +634,24 @@ function drawList(){
 function render(){
   if (!S.mkt) return;
   const mkt = S.mkt, tol = S.tol;
-  const lo = Math.round(mkt*.86), hi = Math.round(mkt*1.14);
+  const lo = SLIDER_LO, hi = SLIDER_HI;
   bet = Math.min(hi, Math.max(lo, bet || Math.round(mkt)));
   $("mkt").textContent = fmt(mkt);
-  $("tol").textContent = tol;
   $("dleft").textContent = S.daysLeft;
   $("bet").value = fmt(bet);
   Object.assign($("slider"), { min: lo, max: hi, step: 100, value: bet });
+  // 滑桿範圍固定在 3 萬到 12 萬,市價不再是中點,所以中間直接把市價印出來
+  // 當參考點——否則玩家看不出自己拖到的位置離市價多遠。
   $("rlo").textContent = fmt(lo); $("rhi").textContent = fmt(hi);
+  $("rmid").textContent = fmt(mkt);
 
   const g = gutsOf(bet, mkt), k = 1 + g/10;
-  $("guts").textContent = g.toFixed(2) + "%";
-  $("zero").textContent = "誤差 >" + tol + "%";
+  $("guts").textContent = g.toFixed(2);
   $("kmax").textContent = k.toFixed(2) + "×";
   $("plates").innerHTML = drum(k);
   const v = $("verdict");
   v.textContent = k>=1.5 ? "WINNER WINNER!" : k>=1.15 ? "CHICKEN DINNER" : "只夠回本";
   v.className = "vd" + (k>=1.15 ? "" : " lose");
-  $("m2").textContent = Math.max(0, k*(1-2/tol)).toFixed(2) + "×";
-  $("m5").textContent = Math.max(0, k*(1-5/tol)).toFixed(2) + "×";
-  $("m8").textContent = Math.max(0, k*(1-8/tol)).toFixed(2) + "×";
 
   $("submit").textContent = mine ? "改注" : "下注";
   $("submit").disabled = busy || S.closed;
