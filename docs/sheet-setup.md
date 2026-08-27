@@ -42,7 +42,7 @@ Sheet ID: `1j3ZR5aMRWtVA2ILoydljTk1UjQ61qCn7KDPSqlOjha0`
 ## Web App 部署網址
 
 ```
-https://script.google.com/macros/s/AKfycbwxroczGE4hLMYfkxjjPsmbETVXD-iHIABR_WTe_zn9TMfsAHVfLfvmhNqeG9dBy1Jm/exec
+https://script.google.com/macros/s/AKfycbz96sNqUTzyxmVymm9G1R0TYAcYjYX2Vb5wxM-ZswwGAez3SVYdXQvs8i695XrRYODw/exec
 ```
 
 部署設定：執行身分 = 我、誰可以存取 = 所有人。
