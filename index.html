@@ -90,10 +90,15 @@ body{
   color:var(--cream-dim);margin-top:6px;letter-spacing:.02em;text-shadow:none;
 }
 .pot{display:flex;gap:10px;margin-top:16px;position:relative}
-.pot div{flex:1;background:var(--bg-card);border:1px solid var(--wood-line);border-radius:12px;padding:9px 10px;text-align:center}
+/* 只選直接子元素。用 .pot div 會連 .k / .v / .cap 都套上外框,變成盒中盒。 */
+.pot > div{flex:1;background:var(--bg-card);border:1px solid var(--wood-line);border-radius:12px;padding:11px 10px;text-align:center}
 .pot .k{font-size:9.5px;color:var(--cream-dim);font-weight:600;letter-spacing:.06em}
 .pot .v{font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--gold);margin-top:2px;font-variant-numeric:tabular-nums}
 .pot .v small{font-size:10px;font-weight:600;color:var(--cream-dim)}
+.pot .price-now .v{font-size:34px;letter-spacing:-.01em;margin-top:4px}
+.pot .price-now .cap{font-size:9.5px;color:var(--cream-dim);font-weight:600;margin-top:4px}
+/* 行情抓不到時顯示的是最後一次成功的價格,必須看得出來是舊的 */
+.pot .price-now .cap.stale{color:var(--neon-red)}
 
 /* ---------- shell ---------- */
 .pane{padding:14px 14px 0}
@@ -249,9 +254,11 @@ nav button[aria-selected=true] .ic{background:rgba(242,183,5,.18)}
       <span>9/11 00:00（UTC+8）Coinbase 開盤結算 · 賭一頓飯</span>
     </h1>
     <div class="pot">
-      <div><div class="k">已下注</div><div class="v" id="pCount">0<small>/25</small></div></div>
-      <div><div class="k">餐點池</div><div class="v" id="pTotal">0.0<small> 份</small></div></div>
-      <div><div class="k">吃到飯</div><div class="v" id="pWin">0<small> 人</small></div></div>
+      <div class="price-now">
+        <div class="k">BTC / USD 現價</div>
+        <div class="v" id="pMkt">—</div>
+        <div class="cap" id="pMktCap">同步中…</div>
+      </div>
     </div>
   </div>
 
@@ -461,19 +468,31 @@ function renderBoard(){
   $("settle").value = settle;
   const N = S.roster.length;
   const tot = S.roster.reduce((a, r) => a + scoreOf(r), 0);
-  const win = S.roster.filter(r => scoreOf(r) >= 1).length;
-  $("pCount").innerHTML = N + `<small>/${TARGET}</small>`;
-  $("pTotal").innerHTML = tot.toFixed(1) + "<small> 份</small>";
-  $("pWin").innerHTML = win + "<small> 人</small>";
+  $("pMkt").textContent = S.mkt ? '$' + fmt(S.mkt) : '—';
+  const cap = $("pMktCap");
+  const stale = S.src === 'fallback';
+  cap.textContent = stale
+    ? '行情暫時抓不到,這是最後一次成功的價格'
+    : `Coinbase Exchange · 已下注 ${N}/${TARGET} 人`;
+  cap.classList.toggle('stale', stale);
   const d = N - tot;
   $("sDiff").innerHTML = (d >= 0 ? "+" : "") + d.toFixed(1) + "<small> 份</small>";
   $("sDiff").style.color = d >= 0 ? "var(--aqua-d)" : "var(--coral)";
   drawScatter(); drawList();
 }
 
+// Y 軸刻度。區間夠寬就用整千(79k),窄到整千會重複時改用一位小數(78.9k),
+// 否則只有一兩筆下注時三個刻度會印出同一個數字。
+function kLabel(p, span){
+  return (span >= 4000 ? Math.round(p/1000) : (p/1000).toFixed(1)) + 'k';
+}
+
 function drawScatter(){
   const W = 390, H = 300, L = 40, R = 10, T = 16, B = 30;
-  const ps = S.roster.map(r => r.bet).concat([settle, S.mkt]).filter(v => v > 0);
+  // K 線的收盤價也要納入範圍,否則走勢線會被畫到圖框外面。
+  const ps = S.roster.map(r => r.bet)
+    .concat(klines.map(k => k.close))
+    .concat([settle, S.mkt]).filter(v => v > 0);
   if (!ps.length) { $("board").innerHTML = ''; return; }
   let lo = Math.min(...ps), hi = Math.max(...ps);
   const pd = (hi - lo) * .1 || 1000; lo -= pd; hi += pd;
@@ -485,7 +504,7 @@ function drawScatter(){
   for (let i = 0; i <= 4; i++) {
     const p = lo + (hi - lo) * i / 4;
     s += `<line x1="${L}" y1="${y(p)}" x2="${W-R}" y2="${y(p)}" stroke="#4a341c"/>
-    <text x="${L-5}" y="${y(p)+3.5}" text-anchor="end" font-size="8.5" font-weight="600" fill="#c9bfa8">${fmt(p/1000)}k</text>`;
+    <text x="${L-5}" y="${y(p)+3.5}" text-anchor="end" font-size="8.5" font-weight="600" fill="#c9bfa8">${kLabel(p, hi - lo)}</text>`;
   }
   s += `<line x1="${L}" y1="${y(settle)}" x2="${W-R}" y2="${y(settle)}" stroke="#ff3b5c" stroke-width="1.5" stroke-dasharray="5 4"/>
   <text x="${W-R}" y="${y(settle)-6}" text-anchor="end" font-size="9" font-weight="800" fill="#ff3b5c">假設 ${fmt(settle)}</text>`;
@@ -619,7 +638,7 @@ function drawList(){
       <div class="av">${esc(r.name.slice(0,1))}</div>
       <div class="pi">
         <div class="pn">${esc(r.name)}${isMe?'<span class="tag">你</span>':''}</div>
-        <div class="pm">${dayLbl} · 押 ${fmt(r.bet)} · 膽量 ${r.guts.toFixed(1)}% · 容許 ±${r.tol}%</div>
+        <div class="pm">${dayLbl} · 押 ${fmt(r.bet)} · 膽量 ${r.guts.toFixed(1)}%</div>
       </div>
       <div class="px"><div class="x">${m.toFixed(2)}×</div><div class="d">${drum(m)}</div></div>`;
     el.appendChild(d);
